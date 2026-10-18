@@ -100,14 +100,26 @@
         <!-- Action Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs">
             <div class="flex items-center space-x-3">
-                <h2 id="vault-header-title" class="text-lg font-bold text-gray-900 dark:text-white">Semua Item Brankas</h2>
+                <h2 id="vault-header-title" class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Semua Item Brankas</h2>
                 <span id="vault-count-badge" class="px-2 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full">0</span>
             </div>
 
             <div class="flex items-center space-x-2">
-                <button type="button" onclick="openAddItemModal('login')" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center space-x-1.5">
+                <!-- Density Mode Switcher (Card vs Compact Row) -->
+                <div class="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700/70" title="Ubah Kerapatan Tampilan">
+                    <button type="button" id="btn-density-card" onclick="VaultApp.setDensity('card')" class="p-1.5 rounded-lg text-xs font-medium transition bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-2xs" title="Tampilan Kartu">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    </button>
+                    <button type="button" id="btn-density-compact" onclick="VaultApp.setDensity('compact')" class="p-1.5 rounded-lg text-xs font-medium transition text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Tampilan Kompak / Ramping">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Tambah Item Baru Button -->
+                <button type="button" onclick="openAddItemModal('login')" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center space-x-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    <span>Item Baru</span>
+                    <span class="hidden sm:inline">Item Baru</span>
+                    <span class="sm:hidden">Tambah</span>
                 </button>
             </div>
         </div>
@@ -115,23 +127,85 @@
         <!-- Vault Items List -->
         <div id="vault-items-container" class="space-y-2.5">
             <!-- Loading Skeleton -->
-            <div class="p-6 text-center text-sm text-gray-400 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
-                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                <span>Menyiapkan brankas terenkripsi...</span>
+            <div class="p-8 text-center text-sm text-gray-400 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto mb-2.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                <span class="font-medium text-xs">Menyiapkan brankas terenkripsi...</span>
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div id="vault-empty-state" class="hidden text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-xs">
-            <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <!-- Empty State with Onboarding Templates -->
+        <div id="vault-empty-state" class="hidden py-10 px-6 sm:px-10 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs text-center">
+            <div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3.5 border border-blue-100 dark:border-blue-900/40">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
             <h3 class="text-base font-bold text-gray-900 dark:text-white">Brankas Anda Masih Kosong</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-1 mb-5">Mulai simpan kata sandi akun, catatan rahasia, atau kartu perbankan Anda dengan keamanan enkripsi end-to-end.</p>
-            <button type="button" onclick="openAddItemModal('login')" class="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                <span>Tambah Item Pertama</span>
-            </button>
+            <p class="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-6">Mulai simpan kata sandi, catatan rahasia, atau kartu penting Anda dengan keamanan Zero-Knowledge enkripsi klien.</p>
+
+            <div class="text-left max-w-xl mx-auto">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-2.5 text-center sm:text-left">Template Instan Cepat:</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
+                    <button type="button" onclick="VaultApp.applyTemplate('google')" class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/60 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition flex items-center space-x-3 text-left group">
+                        <div class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center flex-shrink-0">G</div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Akun Google / Gmail</div>
+                            <div class="text-[10px] text-gray-400">accounts.google.com</div>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="VaultApp.applyTemplate('github')" class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/60 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition flex items-center space-x-3 text-left group">
+                        <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold text-xs flex items-center justify-center flex-shrink-0">GH</div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Akun GitHub</div>
+                            <div class="text-[10px] text-gray-400">github.com</div>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="openAddItemModal('card')" class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/60 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition flex items-center space-x-3 text-left group">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Kartu ATM / Kredit</div>
+                            <div class="text-[10px] text-gray-400">Visa, Mastercard, dsb</div>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="openAddItemModal('note')" class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-500/60 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition flex items-center space-x-3 text-left group">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Catatan Rahasia / Wi-Fi</div>
+                            <div class="text-[10px] text-gray-400">Teks terenkripsi aman</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button type="button" onclick="openAddItemModal('login')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition inline-flex items-center space-x-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Buat Item Kustom Baru</span>
+                </button>
+                <a href="<?= $url('/settings') ?>" class="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center space-x-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span>Impor dari Google Chrome / Bitwarden</span>
+                </a>
+            </div>
         </div>
     </main>
 </div>
+
+<!-- Privacy Mode / Shoulder Surfing Blur Styles -->
+<style>
+    .privacy-blur-active .privacy-sensitive {
+        filter: blur(5.5px);
+        user-select: none;
+        transition: filter 0.18s ease-in-out;
+    }
+    .privacy-blur-active .privacy-sensitive:hover {
+        filter: none;
+        user-select: auto;
+    }
+</style>
+

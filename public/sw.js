@@ -3,7 +3,7 @@
  * Zero-Knowledge Safe Offline Caching Strategy
  */
 
-const CACHE_NAME = 'passvault-static-v1.2';
+const CACHE_NAME = 'passvault-static-v1.3';
 
 // Static assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -45,6 +45,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
+
+    // Abaikan skema non-HTTP/HTTPS (misalnya chrome-extension://, moz-extension://)
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
 
     // SECURITY CRITICAL:
     // Seluruh rute API (/api/*), rute auth login/logout, dan method non-GET TIDAK BOLEH dicache!

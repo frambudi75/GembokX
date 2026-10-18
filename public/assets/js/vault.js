@@ -12,7 +12,49 @@ const VaultApp = (() => {
     let currentFolderId = null;
     let autoLockTimer = null;
     let activeDetailItem = null;
+    let currentDensity = localStorage.getItem('pv_density') || 'card';
+    let isPrivacyMode = localStorage.getItem('pv_privacy_mode') === 'true';
     const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 Menit
+
+    const getDomainFromUrl = (urlStr) => {
+        if (!urlStr) return '';
+        try {
+            let clean = urlStr.trim();
+            if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+                clean = 'https://' + clean;
+            }
+            const u = new URL(clean);
+            return u.hostname.replace(/^www\./, '');
+        } catch (e) {
+            const match = urlStr.match(/([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/);
+            return match ? match[1] : '';
+        }
+    };
+
+    const getMonogramBadge = (name) => {
+        const clean = (name || 'V').trim();
+        const words = clean.split(/\s+/);
+        const letters = words.length > 1 ? (words[0][0] + words[1][0]) : clean.slice(0, 2);
+        const colors = [
+            'bg-blue-600 text-white',
+            'bg-emerald-600 text-white',
+            'bg-purple-600 text-white',
+            'bg-amber-600 text-white',
+            'bg-rose-600 text-white',
+            'bg-indigo-600 text-white',
+            'bg-teal-600 text-white'
+        ];
+        let hash = 0;
+        for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+        const colorClass = colors[Math.abs(hash) % colors.length];
+        return `<div class="w-9 h-9 rounded-xl ${colorClass} font-bold text-xs flex items-center justify-center uppercase tracking-wider shadow-xs flex-shrink-0">${escapeHtml(letters.toUpperCase())}</div>`;
+    };
+
+    const getMonogramSmall = (name) => {
+        const clean = (name || 'V').trim();
+        const letter = clean.charAt(0) || 'V';
+        return `<div class="w-5 h-5 rounded-md bg-blue-600/20 text-blue-500 font-bold text-[9px] flex items-center justify-center uppercase flex-shrink-0">${escapeHtml(letter.toUpperCase())}</div>`;
+    };
 
     /**
      * Inisialisasi Auto-Lock Timer
@@ -193,17 +235,15 @@ const VaultApp = (() => {
 
         if (emptyState) emptyState.classList.add('hidden');
 
+        updateDensityUI();
+        initPrivacyMode();
+
+        container.className = currentDensity === 'compact' ? 'space-y-1.5' : 'space-y-2.5';
+
         container.innerHTML = filtered.map(item => {
             const d = item.data;
             const isFav = item.is_favorite;
-            const typeIcons = {
-                login: `<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>`,
-                card: `<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>`,
-                note: `<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`,
-                identity: `<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>`
-            };
-
-            const icon = typeIcons[item.item_type] || typeIcons.login;
+            const domain = (d.url ? getDomainFromUrl(d.url) : '') || getDomainFromUrl(d.name || '');
 
             let subtext = '';
             if (item.item_type === 'login') {
@@ -219,18 +259,80 @@ const VaultApp = (() => {
             const folder = decryptedFolders.find(f => f.id == item.folder_id);
             const folderTag = folder ? `<span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600/50 rounded ml-2 flex-shrink-0">${escapeHtml(folder.name)}</span>` : '';
 
+            // Icon resolution: Favicon -> Monogram -> Type SVG
+            let iconHtml = '';
+            let iconSmall = '';
+
+            if (item.item_type === 'login') {
+                if (domain) {
+                    iconHtml = `
+                    <div class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-700/80 p-1.5 flex items-center justify-center flex-shrink-0 shadow-2xs border border-gray-200/60 dark:border-gray-600/40">
+                        <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64" 
+                             class="w-6 h-6 rounded object-contain" 
+                             alt="" 
+                             loading="lazy" 
+                             onerror="this.onerror=null; this.parentElement.outerHTML='${getMonogramBadge(d.name)}';" />
+                    </div>`;
+                    iconSmall = `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" class="w-4 h-4 rounded object-contain" alt="" onerror="this.onerror=null; this.parentElement.innerHTML='${getMonogramSmall(d.name)}';" />`;
+                } else {
+                    iconHtml = getMonogramBadge(d.name);
+                    iconSmall = getMonogramSmall(d.name);
+                }
+            } else if (item.item_type === 'card') {
+                iconHtml = `<div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-emerald-100 dark:border-emerald-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>`;
+                iconSmall = `<div class="w-4 h-4 text-emerald-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>`;
+            } else if (item.item_type === 'note') {
+                iconHtml = `<div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-amber-100 dark:border-amber-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>`;
+                iconSmall = `<div class="w-4 h-4 text-amber-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>`;
+            } else {
+                iconHtml = `<div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-purple-100 dark:border-purple-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>`;
+                iconSmall = `<div class="w-4 h-4 text-purple-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>`;
+            }
+
+            // COMPACT ROW DENSITY
+            if (currentDensity === 'compact') {
+                return `
+                <div class="group flex items-center justify-between py-2 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl transition duration-150 shadow-2xs cursor-pointer text-xs" onclick="VaultApp.showDetailModal(${item.id})">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                        <div class="flex-shrink-0">
+                            ${iconSmall}
+                        </div>
+                        <div class="min-w-0 flex items-center space-x-2">
+                            <span class="font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">${escapeHtml(d.name || 'Tanpa Judul')}</span>
+                            ${folderTag}
+                            <span class="privacy-sensitive text-gray-400 truncate hidden sm:inline">• ${escapeHtml(subtext)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-1 flex-shrink-0" onclick="event.stopPropagation()">
+                        ${d.username ? `
+                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Username" onclick="VaultApp.copyToClipboard('${escapeJs(d.username)}', 'Username disalin!')">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </button>` : ''}
+
+                        ${d.password ? `
+                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Kata Sandi" onclick="VaultApp.copyToClipboard('${escapeJs(d.password)}', 'Kata sandi disalin!')">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        </button>` : ''}
+
+                        <button type="button" class="w-7 h-7 flex items-center justify-center ${isFav ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'} rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="${isFav ? 'Hapus dari Favorit' : 'Jadikan Favorit'}" onclick="VaultApp.toggleFavorite(${item.id})">
+                            <svg class="w-3.5 h-3.5" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                        </button>
+                    </div>
+                </div>`;
+            }
+
+            // STANDARD CARD DENSITY
             return `
             <div class="group flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl transition duration-150 shadow-xs cursor-pointer" onclick="VaultApp.showDetailModal(${item.id})">
                 <div class="flex items-center space-x-3.5 min-w-0">
-                    <div class="p-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
-                        ${icon}
-                    </div>
+                    ${iconHtml}
                     <div class="min-w-0">
                         <div class="flex items-center">
                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">${escapeHtml(d.name || 'Tanpa Judul')}</h4>
                             ${folderTag}
                         </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${escapeHtml(subtext)}</p>
+                        <p class="privacy-sensitive text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${escapeHtml(subtext)}</p>
                     </div>
                 </div>
                 
@@ -337,7 +439,7 @@ const VaultApp = (() => {
             html += `
             <div class="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-800">
                 <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Catatan Tambahan</span>
-                <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${escapeHtml(d.notes)}</p>
+                <p class="privacy-sensitive text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${escapeHtml(d.notes)}</p>
             </div>`;
         }
 
@@ -357,7 +459,7 @@ const VaultApp = (() => {
         <div class="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-800">
             <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">${escapeHtml(label)}</span>
             <div class="flex items-center justify-between">
-                <span class="text-sm ${isMono ? 'font-mono' : ''} text-gray-900 dark:text-gray-100 truncate">${escapeHtml(val)}</span>
+                <span class="privacy-sensitive text-sm ${isMono ? 'font-mono' : ''} text-gray-900 dark:text-gray-100 truncate">${escapeHtml(val)}</span>
                 ${canCopy ? `
                 <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(val)}', '${escapeJs(label)} disalin!')" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
@@ -372,7 +474,7 @@ const VaultApp = (() => {
         <div class="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-800">
             <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">${escapeHtml(label)}</span>
             <div class="flex items-center justify-between">
-                <span id="${randId}" data-real="${escapeHtml(pwd)}" class="text-sm font-mono text-gray-900 dark:text-gray-100 truncate">••••••••••••</span>
+                <span id="${randId}" data-real="${escapeHtml(pwd)}" class="privacy-sensitive text-sm font-mono text-gray-900 dark:text-gray-100 truncate">••••••••••••</span>
                 <div class="flex items-center space-x-1">
                     <button type="button" onclick="VaultApp.toggleDetailPassword('${randId}')" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Lihat/Sembunyikan">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -721,6 +823,97 @@ const VaultApp = (() => {
         }
     };
 
+    /**
+     * Pengaturan Kerapatan Tampilan (Density Mode)
+     */
+    const setDensity = (mode) => {
+        currentDensity = mode;
+        try { localStorage.setItem('pv_density', mode); } catch (e) {}
+        updateDensityUI();
+        renderVaultUI();
+    };
+
+    const updateDensityUI = () => {
+        const btnCard = document.getElementById('btn-density-card');
+        const btnCompact = document.getElementById('btn-density-compact');
+        if (btnCard && btnCompact) {
+            if (currentDensity === 'compact') {
+                btnCompact.className = 'p-1.5 rounded-lg text-xs font-medium transition bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-2xs';
+                btnCard.className = 'p-1.5 rounded-lg text-xs font-medium transition text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200';
+            } else {
+                btnCard.className = 'p-1.5 rounded-lg text-xs font-medium transition bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-2xs';
+                btnCompact.className = 'p-1.5 rounded-lg text-xs font-medium transition text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200';
+            }
+        }
+    };
+
+    /**
+     * Mode Anti-Intip / Privacy Shield
+     */
+    const initPrivacyMode = () => {
+        if (isPrivacyMode) {
+            document.body.classList.add('privacy-blur-active');
+        } else {
+            document.body.classList.remove('privacy-blur-active');
+        }
+        updatePrivacyUI();
+    };
+
+    const togglePrivacyMode = () => {
+        isPrivacyMode = !isPrivacyMode;
+        try { localStorage.setItem('pv_privacy_mode', isPrivacyMode ? 'true' : 'false'); } catch (e) {}
+        if (isPrivacyMode) {
+            document.body.classList.add('privacy-blur-active');
+            AppToast.show('🙈 Mode Anti-Intip Aktif: Data sensitif disamarkan di layar.', 'info', 2500);
+        } else {
+            document.body.classList.remove('privacy-blur-active');
+            AppToast.show('👁️ Mode Anti-Intip Nonaktif: Tampilan normal.', 'info', 2000);
+        }
+        updatePrivacyUI();
+    };
+
+    const updatePrivacyUI = () => {
+        const iconOn = document.getElementById('icon-privacy-on');
+        const iconOff = document.getElementById('icon-privacy-off');
+        const btn = document.getElementById('btn-privacy-toggle');
+        if (iconOn && iconOff) {
+            if (isPrivacyMode) {
+                iconOn.classList.remove('hidden');
+                iconOff.classList.add('hidden');
+                if (btn) btn.classList.add('bg-blue-50', 'dark:bg-blue-950/40', 'text-blue-600');
+            } else {
+                iconOn.classList.add('hidden');
+                iconOff.classList.remove('hidden');
+                if (btn) btn.classList.remove('bg-blue-50', 'dark:bg-blue-950/40', 'text-blue-600');
+            }
+        }
+    };
+
+    /**
+     * Terapkan Template Item Siap Pakai
+     */
+    const applyTemplate = (type) => {
+        if (type === 'google') {
+            openAddItemModal('login');
+            setTimeout(() => {
+                const nameInput = document.getElementById('item-name');
+                const urlInput = document.getElementById('login-url');
+                if (nameInput) nameInput.value = 'Akun Google';
+                if (urlInput) urlInput.value = 'https://accounts.google.com';
+                document.getElementById('login-username')?.focus();
+            }, 60);
+        } else if (type === 'github') {
+            openAddItemModal('login');
+            setTimeout(() => {
+                const nameInput = document.getElementById('item-name');
+                const urlInput = document.getElementById('login-url');
+                if (nameInput) nameInput.value = 'GitHub';
+                if (urlInput) urlInput.value = 'https://github.com';
+                document.getElementById('login-username')?.focus();
+            }, 60);
+        }
+    };
+
     return {
         unlockWithMasterPassword,
         syncAndDecrypt,
@@ -749,6 +942,10 @@ const VaultApp = (() => {
         },
         tryRestoreSession,
         isUnlocked: () => activeVaultKey !== null,
-        createSecretShareLink
+        createSecretShareLink,
+        setDensity,
+        togglePrivacyMode,
+        initPrivacyMode,
+        applyTemplate
     };
 })();
