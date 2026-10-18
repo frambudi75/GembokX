@@ -32,12 +32,6 @@
     </button>
 </form>
 
-<div class="mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 text-center">
-    <p class="text-xs text-gray-500 dark:text-gray-400">
-        Belum memiliki brankas? 
-        <a href="<?= $url('/register') ?>" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline">Daftar Akun Baru</a>
-    </p>
-</div>
 
 <script>
     function togglePasswordVisibility(inputId) {

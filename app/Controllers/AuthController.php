@@ -20,9 +20,8 @@ class AuthController {
 
     public function showRegister(): void {
         AuthMiddleware::guestOnly();
-        View::render('vault/register', [
-            'title' => 'Buat Akun Brankas Baru — GembokX'
-        ], 'auth');
+        // Pendaftaran akun publik dinonaktifkan: akun baru dikelola oleh Administrator
+        Router::redirect('/login');
     }
 
     /**
@@ -146,66 +145,13 @@ class AuthController {
     }
 
     /**
-     * Pendaftaran Akun Baru
+     * Pendaftaran Akun Baru (Publik Dinonaktifkan)
      */
     public function register(): void {
-        $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true) ?: $_POST;
-
-        $email = strtolower(trim($data['email'] ?? ''));
-        $username = trim($data['username'] ?? '');
-        $authKey = trim($data['auth_key'] ?? '');
-        $kdfSalt = trim($data['kdf_salt'] ?? '');
-        $kdfIterations = (int) ($data['kdf_iterations'] ?? 600000);
-        $kdfAlgorithm = in_array($data['kdf_algorithm'] ?? '', ['pbkdf2', 'argon2id']) ? $data['kdf_algorithm'] : 'pbkdf2';
-        $kdfMemory = (int) ($data['kdf_memory'] ?? 65536);
-        $kdfParallelism = (int) ($data['kdf_parallelism'] ?? 4);
-        $encryptedVaultKey = trim($data['encrypted_vault_key'] ?? '');
-        $vaultKeyIv = trim($data['vault_key_iv'] ?? '');
-        $recoveryCode = trim($data['recovery_code'] ?? '');
-
-        if (empty($email) || empty($username) || empty($authKey) || empty($encryptedVaultKey) || empty($vaultKeyIv)) {
-            Router::json(['success' => false, 'message' => 'Semua bidang wajib diisi lengkap.'], 400);
-        }
-
-        if (User::findByEmail($email)) {
-            Router::json(['success' => false, 'message' => 'Email ini sudah terdaftar. Silakan login.'], 409);
-        }
-
-        try {
-            $userId = User::create([
-                'email' => $email,
-                'username' => $username,
-                'auth_key' => $authKey,
-                'kdf_salt' => $kdfSalt,
-                'kdf_iterations' => $kdfIterations,
-                'kdf_algorithm' => $kdfAlgorithm,
-                'kdf_memory' => $kdfMemory,
-                'kdf_parallelism' => $kdfParallelism,
-                'encrypted_vault_key' => $encryptedVaultKey,
-                'vault_key_iv' => $vaultKeyIv,
-                'recovery_code' => $recoveryCode
-            ]);
-
-            $user = User::findById($userId);
-            SessionService::login($user);
-            ActivityLog::log($userId, 'register_success');
-
-            Router::json([
-                'success' => true,
-                'message' => 'Pendaftaran akun berhasil!',
-                'redirect' => Router::url('/vault'),
-                'user' => [
-                    'id' => $user['id'],
-                    'email' => $user['email'],
-                    'username' => $user['username'],
-                    'encrypted_vault_key' => $user['encrypted_vault_key'],
-                    'vault_key_iv' => $user['vault_key_iv']
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Router::json(['success' => false, 'message' => 'Gagal membuat akun: ' . $e->getMessage()], 500);
-        }
+        Router::json([
+            'success' => false,
+            'message' => 'Pendaftaran mandiri dinonaktifkan. Pembuatan akun baru hanya dapat dilakukan melalui Administrator.'
+        ], 403);
     }
 
     public function logout(): void {

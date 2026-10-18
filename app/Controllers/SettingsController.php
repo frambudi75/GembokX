@@ -163,7 +163,10 @@ class SettingsController {
 
         $targetDir = dirname(__DIR__, 2) . '/public/uploads/avatars';
         if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
+            @mkdir($targetDir, 0777, true);
+        }
+        if (!is_writable($targetDir)) {
+            @chmod($targetDir, 0777);
         }
 
         // Hapus foto profil lama pengguna jika ada untuk menghemat ruang disk
@@ -200,14 +203,14 @@ class SettingsController {
 
                 imagecopyresampled($dstImg, $srcImg, 0, 0, $cropX, $cropY, $targetSize, $targetSize, $minSide, $minSide);
 
-                if (function_exists('imagewebp')) {
-                    imagewebp($dstImg, $targetPath, 82);
+                if (function_exists('imagewebp') && @imagewebp($dstImg, $targetPath, 82)) {
                     $compressed = true;
                 } elseif (function_exists('imagejpeg')) {
                     $filename = str_replace('.webp', '.jpg', $filename);
                     $targetPath = $targetDir . '/' . $filename;
-                    imagejpeg($dstImg, $targetPath, 85);
-                    $compressed = true;
+                    if (@imagejpeg($dstImg, $targetPath, 85)) {
+                        $compressed = true;
+                    }
                 }
 
                 imagedestroy($dstImg);
@@ -215,15 +218,19 @@ class SettingsController {
             }
         }
 
-        // Fallback jika GD tidak memproses
+        // Fallback jika GD tidak memproses atau belum terinstall
         if (!$compressed) {
-            $ext = $allowedTypes[$mime];
+            $ext = $allowedTypes[$mime] ?? 'webp';
             $filename = 'avatar_' . $userId . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
             $targetPath = $targetDir . '/' . $filename;
-            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-                Router::json(['success' => false, 'message' => 'Gagal menyimpan berkas foto ke server.'], 500);
+            if (!@move_uploaded_file($file['tmp_name'], $targetPath)) {
+                if (!@copy($file['tmp_name'], $targetPath) && !@file_put_contents($targetPath, file_get_contents($file['tmp_name']))) {
+                    Router::json(['success' => false, 'message' => 'Gagal menyimpan berkas foto ke server. Periksa izin direktori uploads.'], 500);
+                }
             }
         }
+
+        @chmod($targetPath, 0666);
 
         $avatarUrl = '/uploads/avatars/' . $filename;
         User::updateAvatar($userId, $avatarUrl);
