@@ -212,6 +212,28 @@ docker-compose up -d --build
 
 ---
 
+### 👤 Akun Pengguna & Seeder Demo
+
+#### 1. Instalasi Baru (Fresh / Production):
+- Database dimulai dalam kondisi **bersih tanpa akun bawaan** (`0 users`).
+- Silakan buka halaman login dan klik **Daftar Akun Baru** (`/register`) untuk membuat akun pribadi Anda.
+- **Hak Akses Admin:** Pengguna pertama yang mendaftar otomatis ditetapkan sebagai **Administrator** sistem.
+
+#### 2. Akun Demo untuk Pengujian Lokal (Opsional):
+- Jika Anda ingin mengisi data demo (kategori & item brankas contoh) untuk pengujian, jalankan perintah seeder berikut:
+  ```bash
+  # Di XAMPP / CLI:
+  php seed.php
+
+  # Di Docker container:
+  docker compose exec web php seed.php
+  ```
+- **Kredensial Akun Demo:**
+  - **Email:** `demo@gembokx.local`
+  - **Master Password:** `GembokXAdmin2026!`
+
+---
+
 ## 📂 Struktur Proyek
 
 ```

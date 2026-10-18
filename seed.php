@@ -21,13 +21,13 @@ use App\Models\Folder;
 App::boot();
 $pdo = Database::getConnection();
 
-// Akun Target Pengguna
-$email = 'frambudihabib@gmail.com';
-$username = 'habib';
-$password = 'sup3rmaN';
+// Akun Target Pengguna Demo
+$email = 'demo@gembokx.local';
+$username = 'admin';
+$password = 'GembokXAdmin2026!';
 
-echo "=== PassVault Seeder ===\n";
-echo "Target User: {$username} ({$email})\n";
+echo "=== GembokX Seeder ===\n";
+echo "Demo User: {$username} ({$email})\n";
 echo "Password: {$password}\n\n";
 
 // Cek apakah user sudah ada
@@ -109,11 +109,11 @@ $sampleItems = [
         'folder' => 'Pekerjaan',
         'fav' => 1,
         'data' => [
-            'name' => 'GitHub Developer',
-            'username' => 'frambudihabib@gmail.com',
-            'password' => 'ghp_superSecretToken99238472918237',
+            'name' => 'GitHub Enterprise Demo',
+            'username' => 'developer@example.com',
+            'password' => 'ghp_demoSecretToken99238472918237',
             'url' => 'https://github.com/login',
-            'notes' => 'Akun utama repository proyek dan deployment.',
+            'notes' => 'Akun contoh repository proyek dan deployment.',
             'totp_seed' => 'JBSWY3DPEHPK3PXP'
         ]
     ],
@@ -124,7 +124,7 @@ $sampleItems = [
         'data' => [
             'name' => 'VPS Server SSH (Ubuntu)',
             'username' => 'root',
-            'password' => 'VpS-s3cure#2026-XampP',
+            'password' => 'VpS-s3cure#2026-Demo',
             'url' => 'ssh://192.168.1.100',
             'notes' => 'Port SSH: 2222. Kunci privat RSA tersimpan di catatan rahasia.'
         ]
@@ -134,11 +134,11 @@ $sampleItems = [
         'folder' => 'Sosial Media',
         'fav' => 0,
         'data' => [
-            'name' => 'Google Workspace (Habib)',
-            'username' => 'frambudihabib@gmail.com',
-            'password' => 'Google@HabibSecure#2026',
+            'name' => 'Google Workspace Demo',
+            'username' => 'demo@example.com',
+            'password' => 'Google@DemoSecure#2026',
             'url' => 'https://accounts.google.com',
-            'notes' => 'Email utama pemulihan dan kontak profesional.'
+            'notes' => 'Email contoh kontak profesional.'
         ]
     ],
     [
@@ -147,7 +147,7 @@ $sampleItems = [
         'fav' => 1,
         'data' => [
             'name' => 'BCA Debit Mastercard',
-            'cardholder' => 'HABIB FRAMBUDI',
+            'cardholder' => 'DEMO USER',
             'brand' => 'Mastercard',
             'number' => '5210889923417721',
             'exp_month' => '08',
