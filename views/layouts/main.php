@@ -237,8 +237,8 @@
     <script src="<?= $url('/assets/js/crypto.js') ?>"></script>
     <script src="<?= $url('/assets/js/generator.js') ?>"></script>
     <script src="<?= $url('/assets/js/biometrics.js') ?>"></script>
-    <script src="<?= $url('/assets/js/app.js') ?>"></script>
-    <script src="<?= $url('/assets/js/vault.js') ?>"></script>
+    <script src="<?= $url('/assets/js/app.js?v=1.4') ?>"></script>
+    <script src="<?= $url('/assets/js/vault.js?v=1.4') ?>"></script>
 
     <!-- Modals Terintegrasi -->
     <?php include dirname(__DIR__) . '/partials/modal_unlock.php'; ?>

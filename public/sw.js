@@ -3,7 +3,7 @@
  * Zero-Knowledge Safe Offline Caching Strategy
  */
 
-const CACHE_NAME = 'passvault-static-v1.3';
+const CACHE_NAME = 'passvault-static-v1.4';
 
 // Static assets to pre-cache on install
 const PRECACHE_ASSETS = [
