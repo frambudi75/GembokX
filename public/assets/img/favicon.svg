@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+    <!-- Rounded Container for high contrast on light/dark browser tabs -->
+    <rect width="32" height="32" rx="7" fill="#0F172A"/>
+    
+    <!-- Shield Outline -->
+    <path d="M16 4.5L7 8V15.5C7 21.8 10.8 26.2 16 28C21.2 26.2 25 21.8 25 15.5V8L16 4.5Z" fill="#1E293B" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round"/>
+    
+    <!-- Vault Dial & Core -->
+    <circle cx="16" cy="16" r="4.25" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5"/>
+    <circle cx="16" cy="16" r="1.5" fill="#38BDF8"/>
+    <path d="M16 10.8V12.2M16 19.8V21.2M10.8 16H12.2M19.8 16H21.2" stroke="#38BDF8" stroke-width="1.2" stroke-linecap="round"/>
+    
+    <!-- Security Status Indicator -->
+    <circle cx="16" cy="8.2" r="1" fill="#10B981"/>
+</svg>
