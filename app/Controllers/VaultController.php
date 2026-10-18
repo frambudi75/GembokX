@@ -19,8 +19,12 @@ class VaultController {
                 'encrypted' => $user['encrypted_vault_key'],
                 'iv' => $user['vault_key_iv'],
                 'salt' => $user['kdf_salt'],
-                'iterations' => (int) $user['kdf_iterations']
-            ]
+                'iterations' => (int) $user['kdf_iterations'],
+                'algorithm' => $user['kdf_algorithm'] ?? 'pbkdf2',
+                'memory' => (int) ($user['kdf_memory'] ?? 65536),
+                'parallelism' => (int) ($user['kdf_parallelism'] ?? 4)
+            ],
+            'autolockMinutes' => (int) ($user['autolock_minutes'] ?? 15)
         ], 'main');
     }
 
@@ -35,7 +39,10 @@ class VaultController {
                 'encrypted' => $user['encrypted_vault_key'],
                 'iv' => $user['vault_key_iv'],
                 'salt' => $user['kdf_salt'],
-                'iterations' => (int) $user['kdf_iterations']
+                'iterations' => (int) $user['kdf_iterations'],
+                'algorithm' => $user['kdf_algorithm'] ?? 'pbkdf2',
+                'memory' => (int) ($user['kdf_memory'] ?? 65536),
+                'parallelism' => (int) ($user['kdf_parallelism'] ?? 4)
             ]
         ], 'main');
     }
@@ -53,8 +60,13 @@ class VaultController {
                 'encrypted' => $user['encrypted_vault_key'],
                 'iv' => $user['vault_key_iv'],
                 'salt' => $user['kdf_salt'],
-                'iterations' => (int) $user['kdf_iterations']
-            ]
+                'iterations' => (int) $user['kdf_iterations'],
+                'algorithm' => $user['kdf_algorithm'] ?? 'pbkdf2',
+                'memory' => (int) ($user['kdf_memory'] ?? 65536),
+                'parallelism' => (int) ($user['kdf_parallelism'] ?? 4)
+            ],
+            'autolockMinutes' => (int) ($user['autolock_minutes'] ?? 15),
+            'discordWebhook' => $user['discord_webhook_url'] ?? ''
         ], 'main');
     }
 

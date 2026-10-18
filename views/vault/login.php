@@ -88,10 +88,20 @@
                 return;
             }
 
-            statusMsg.textContent = 'Mendriver Master Key (600.000 iterasi PBKDF2)...';
+            const kdfAlgo = preData.kdf_algorithm || 'pbkdf2';
+            statusMsg.textContent = kdfAlgo === 'argon2id' 
+                ? 'Mendriver Master Key (Argon2id Memory-Hard WASM)...' 
+                : 'Mendriver Master Key (600.000 iterasi PBKDF2)...';
 
             // 2. Derivasi Master Key dan Auth Key secara lokal di browser
-            const masterKey = await VaultCrypto.deriveMasterKey(password, preData.kdf_salt, preData.kdf_iterations);
+            const masterKey = await VaultCrypto.deriveMasterKey(
+                password, 
+                preData.kdf_salt, 
+                preData.kdf_iterations,
+                kdfAlgo,
+                preData.kdf_memory || 65536,
+                preData.kdf_parallelism || 4
+            );
             const authKey = await VaultCrypto.deriveAuthKey(masterKey);
 
             statusMsg.textContent = 'Memverifikasi kredensial...';

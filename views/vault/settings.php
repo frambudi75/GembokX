@@ -275,6 +275,115 @@
                 </button>
             </div>
         </div>
+
+        <!-- Pengaturan Durasi Auto-Lock Brankas -->
+        <div class="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h4 class="text-xs font-bold text-gray-900 dark:text-white flex items-center space-x-1.5">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span>Auto-Lock Brankas (Inaktivitas)</span>
+                </h4>
+                <p class="text-[11px] text-gray-400 mt-0.5">Otomatis menghapus kunci dari RAM browser dan mengunci brankas jika tidak ada aktivitas pengguna.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <select id="setting-autolock-minutes" onchange="handleAutoLockChange(this.value)" class="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/50">
+                    <option value="1" <?= ($autolockMinutes ?? 15) == 1 ? 'selected' : '' ?>>1 Menit</option>
+                    <option value="5" <?= ($autolockMinutes ?? 15) == 5 ? 'selected' : '' ?>>5 Menit</option>
+                    <option value="15" <?= ($autolockMinutes ?? 15) == 15 ? 'selected' : '' ?>>15 Menit (Standar)</option>
+                    <option value="30" <?= ($autolockMinutes ?? 15) == 30 ? 'selected' : '' ?>>30 Menit</option>
+                    <option value="60" <?= ($autolockMinutes ?? 15) == 60 ? 'selected' : '' ?>>1 Jam</option>
+                    <option value="0" <?= ($autolockMinutes ?? 15) == 0 ? 'selected' : '' ?>>Jangan Pernah (Kurang Aman)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pengaturan Derivasi Kunci Kriptografi (KDF) -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Algoritma Derivasi Kunci Klien (KDF)</h3>
+                    <?php if (($vaultKey['algorithm'] ?? 'pbkdf2') === 'argon2id'): ?>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                            Argon2id (Memory-Hard WASM)
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                            PBKDF2-SHA256 (600.000 iterasi)
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Standar industri untuk melindungi Master Password terhadap cracking hardware GPU/ASIC.</p>
+            </div>
+            <button type="button" onclick="document.getElementById('kdf-change-box').classList.toggle('hidden')" class="px-3.5 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-semibold transition">
+                Ganti Algoritma KDF
+            </button>
+        </div>
+
+        <!-- Form Ubah KDF -->
+        <div id="kdf-change-box" class="hidden p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+            <form id="form-change-kdf" onsubmit="handleChangeKdf(event)" class="space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Target Algoritma</label>
+                        <select id="target-kdf-algo" class="w-full px-3 py-2 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white font-medium">
+                            <option value="argon2id" <?= ($vaultKey['algorithm'] ?? 'pbkdf2') === 'argon2id' ? 'selected' : '' ?>>Argon2id WASM (64MB RAM, 4 Thread - Sangat Kuat)</option>
+                            <option value="pbkdf2" <?= ($vaultKey['algorithm'] ?? 'pbkdf2') === 'pbkdf2' ? 'selected' : '' ?>>PBKDF2-SHA256 (600.000 Iterasi - Standar OWASP)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Master Password Saat Ini</label>
+                        <input type="password" id="kdf-current-password" required placeholder="Masukkan master password..." class="w-full px-3 py-2 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <p class="text-[11px] text-gray-400">Proses akan mendekripsi kunci brankas di browser dan mengenkripsinya kembali dengan KDF baru secara instan.</p>
+                    <button type="submit" id="btn-submit-kdf" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
+                        Terapkan KDF Baru
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifikasi Keamanan Discord Webhooks -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Notifikasi Keamanan Discord (Webhooks)</h3>
+                    <?php if (!empty($discordWebhook)): ?>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                            Aktif Terhubung
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-400">
+                            Belum Terhubung
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Terima notifikasi instan langsung di server/channel Discord Anda ketika login baru, percobaan gagal, atau aktivitas sensitif terdeteksi.</p>
+            </div>
+        </div>
+
+        <form id="form-discord-webhook" onsubmit="handleDiscordSave(event)" class="space-y-3 pt-2">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Discord Webhook URL</label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="url" id="discord-webhook-url" value="<?= $e($discordWebhook ?? '') ?>" placeholder="https://discord.com/api/webhooks/..." class="flex-1 px-3.5 py-2 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 text-gray-900 dark:text-white font-mono">
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="handleDiscordTest()" id="btn-test-discord" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-semibold transition">
+                            Kirim Uji Coba
+                        </button>
+                        <button type="submit" id="btn-save-discord" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
+                            Simpan Webhook
+                        </button>
+                    </div>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1.5">Cara buat: Buka Channel Discord &gt; Edit Channel &gt; Integrations &gt; Webhooks &gt; New Webhook &gt; Copy Webhook URL.</p>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -642,6 +751,186 @@
             } catch (err) {
                 AppToast.show(err.message, 'error');
             }
+        }
+    }
+
+    async function handleAutoLockChange(mins) {
+        const val = parseInt(mins, 10);
+        if (typeof VaultApp !== 'undefined' && VaultApp.setAutoLockMinutes) {
+            VaultApp.setAutoLockMinutes(val);
+        } else {
+            localStorage.setItem('pv_autolock_minutes', val);
+        }
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.updateAutoLock, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({ minutes: val, csrf_token: window.PV_CONFIG.csrfToken })
+            });
+            const data = await res.json();
+            if (data.success) {
+                AppToast.show(data.message, 'success');
+            }
+        } catch (_) {
+            AppToast.show(val > 0 ? `Auto-lock disetel ke ${val} menit.` : 'Auto-lock dinonaktifkan.', 'success');
+        }
+    }
+
+    async function handleChangeKdf(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-kdf');
+        btn.disabled = true;
+        btn.textContent = 'Mendriver & Mengonversi...';
+
+        const pwd = document.getElementById('kdf-current-password').value;
+        const targetAlgo = document.getElementById('target-kdf-algo').value;
+        const meta = window.PV_CONFIG.vaultKeyMeta;
+
+        try {
+            // 1. Dapatkan atau dekripsi Vault Key
+            let vaultKey = VaultApp.getVaultKey ? VaultApp.getVaultKey() : null;
+            if (!vaultKey) {
+                const currentMaster = await VaultCrypto.deriveMasterKey(
+                    pwd,
+                    meta.salt,
+                    meta.iterations,
+                    meta.algorithm || 'pbkdf2',
+                    meta.memory || 65536,
+                    meta.parallelism || 4
+                );
+                vaultKey = await VaultCrypto.decryptVaultKey(meta.encrypted, meta.iv, currentMaster);
+            }
+
+            // 2. Derivasi Auth Key saat ini untuk verifikasi server
+            const currentMasterKey = await VaultCrypto.deriveMasterKey(
+                pwd,
+                meta.salt,
+                meta.iterations,
+                meta.algorithm || 'pbkdf2',
+                meta.memory || 65536,
+                meta.parallelism || 4
+            );
+            const currentAuthKey = await VaultCrypto.deriveAuthKey(currentMasterKey);
+
+            // 3. Buat Salt baru untuk KDF baru
+            const newSalt = VaultCrypto.generateSalt(32);
+            const newIterations = targetAlgo === 'argon2id' ? 3 : 600000;
+            const newMemory = 65536;
+            const newParallelism = 4;
+
+            // 4. Derivasi Master Key baru dengan algoritma target
+            const newMasterKey = await VaultCrypto.deriveMasterKey(
+                pwd,
+                newSalt,
+                newIterations,
+                targetAlgo,
+                newMemory,
+                newParallelism
+            );
+            const newAuthKey = await VaultCrypto.deriveAuthKey(newMasterKey);
+
+            // 5. Re-enkripsi Vault Key dengan Master Key baru
+            const reencrypted = await VaultCrypto.encryptVaultKey(vaultKey, newMasterKey);
+
+            // 6. Kirim ke API update KDF
+            const res = await fetch(window.PV_CONFIG.routes.updateKdf, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({
+                    current_auth_key: currentAuthKey,
+                    new_auth_key: newAuthKey,
+                    new_encrypted_vault_key: reencrypted.encryptedKey,
+                    new_vault_key_iv: reencrypted.iv,
+                    new_kdf_algorithm: targetAlgo,
+                    new_kdf_iterations: newIterations,
+                    new_kdf_memory: newMemory,
+                    new_kdf_parallelism: newParallelism,
+                    new_kdf_salt: newSalt,
+                    csrf_token: window.PV_CONFIG.csrfToken
+                })
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            AppToast.show(data.message, 'success');
+            setTimeout(() => window.location.reload(), 1200);
+        } catch (err) {
+            AppToast.show('Gagal memperbarui KDF: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Terapkan KDF Baru';
+        }
+    }
+
+    async function handleDiscordSave(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-save-discord');
+        btn.disabled = true;
+        const url = document.getElementById('discord-webhook-url').value;
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.updateDiscord, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({
+                    webhook_url: url,
+                    csrf_token: window.PV_CONFIG.csrfToken
+                })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            AppToast.show(data.message, 'success');
+        } catch (err) {
+            AppToast.show('Gagal menyimpan webhook: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function handleDiscordTest() {
+        const btn = document.getElementById('btn-test-discord');
+        const url = document.getElementById('discord-webhook-url').value;
+        if (!url) {
+            AppToast.show('Masukkan Discord Webhook URL terlebih dahulu.', 'error');
+            return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.testDiscord, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({
+                    webhook_url: url,
+                    csrf_token: window.PV_CONFIG.csrfToken
+                })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            AppToast.show(data.message, 'success');
+        } catch (err) {
+            AppToast.show(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Kirim Uji Coba';
         }
     }
 

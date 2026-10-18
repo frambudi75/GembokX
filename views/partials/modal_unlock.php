@@ -97,7 +97,10 @@
                 meta.encrypted,
                 meta.iv,
                 meta.salt,
-                meta.iterations
+                meta.iterations,
+                meta.algorithm || 'pbkdf2',
+                meta.memory || 65536,
+                meta.parallelism || 4
             );
 
             if (success) {

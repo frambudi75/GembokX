@@ -162,6 +162,22 @@ switch ($route) {
         (new SettingsController())->changeMasterKey();
         break;
 
+    case '/api/settings/kdf':
+        (new SettingsController())->updateKdf();
+        break;
+
+    case '/api/settings/discord':
+        (new SettingsController())->updateDiscord();
+        break;
+
+    case '/api/settings/discord/test':
+        (new SettingsController())->testDiscord();
+        break;
+
+    case '/api/settings/autolock':
+        (new SettingsController())->updateAutoLock();
+        break;
+
     case '/api/profile/update':
         (new SettingsController())->updateProfile();
         break;

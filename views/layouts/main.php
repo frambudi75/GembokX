@@ -66,6 +66,7 @@
         window.PV_CONFIG = {
             baseUrl: '<?= $url('/') ?>',
             csrfToken: '<?= $csrf_token() ?>',
+            autolockMinutes: <?= (int) ($autolockMinutes ?? 15) ?>,
             routes: {
                 sync: '<?= $url('/api/vault/sync') ?>',
                 saveItem: '<?= $url('/api/vault/save') ?>',
@@ -77,6 +78,10 @@
                 confirm2fa: '<?= $url('/api/settings/2fa/confirm') ?>',
                 disable2fa: '<?= $url('/api/settings/2fa/disable') ?>',
                 changeMasterKey: '<?= $url('/api/settings/master-key') ?>',
+                updateKdf: '<?= $url('/api/settings/kdf') ?>',
+                updateDiscord: '<?= $url('/api/settings/discord') ?>',
+                testDiscord: '<?= $url('/api/settings/discord/test') ?>',
+                updateAutoLock: '<?= $url('/api/settings/autolock') ?>',
                 importVault: '<?= $url('/api/vault/import') ?>',
                 updateProfile: '<?= $url('/api/profile/update') ?>',
                 uploadAvatar: '<?= $url('/api/profile/avatar') ?>',
@@ -234,6 +239,7 @@
     </nav>
 
     <!-- Core Scripts (Load first so partials and components can use them) -->
+    <script src="<?= $url('/assets/js/argon2.umd.min.js') ?>"></script>
     <script src="<?= $url('/assets/js/crypto.js') ?>"></script>
     <script src="<?= $url('/assets/js/generator.js') ?>"></script>
     <script src="<?= $url('/assets/js/biometrics.js') ?>"></script>

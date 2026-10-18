@@ -11,13 +11,18 @@ CREATE TABLE IF NOT EXISTS `users` (
     `phone`                 VARCHAR(30) NULL,
     `is_active`             TINYINT(1) NOT NULL DEFAULT 1,
     `auth_hash`             VARCHAR(255) NOT NULL,            -- Hash bcrypt dari client-derived Auth Key
-    `kdf_salt`              VARCHAR(64) NOT NULL,             -- Salt unik per-user (Hex / Base64) untuk PBKDF2
-    `kdf_iterations`        INT NOT NULL DEFAULT 600000,      -- Jumlah iterasi PBKDF2 (OWASP recommended)
+    `kdf_salt`              VARCHAR(64) NOT NULL,             -- Salt unik per-user (Hex / Base64) untuk KDF
+    `kdf_iterations`        INT NOT NULL DEFAULT 600000,      -- Jumlah iterasi KDF (PBKDF2) atau waktu (Argon2id)
+    `kdf_algorithm`         ENUM('pbkdf2', 'argon2id') NOT NULL DEFAULT 'pbkdf2', -- Algoritma KDF (PBKDF2 atau Argon2id)
+    `kdf_memory`            INT NOT NULL DEFAULT 65536,       -- Memori Argon2id dalam KB (default 64MB)
+    `kdf_parallelism`       INT NOT NULL DEFAULT 4,           -- Derajat paralelisme thread Argon2id
     `encrypted_vault_key`   TEXT NOT NULL,                    -- Kunci simetris brankas yang dienkripsi oleh Master Key
     `vault_key_iv`          VARCHAR(64) NOT NULL,             -- IV untuk dekripsi kunci brankas
     `totp_secret`           VARCHAR(64) NULL,                 -- Secret key 2FA TOTP (opsional)
     `totp_enabled`          TINYINT(1) NOT NULL DEFAULT 0,    -- Status aktif 2FA (0/1)
     `recovery_code_hash`    VARCHAR(255) NOT NULL,            -- Hash bcrypt dari emergency recovery key
+    `discord_webhook_url`   VARCHAR(255) NULL,                -- Webhook URL Discord untuk notifikasi keamanan instan
+    `autolock_minutes`      INT NOT NULL DEFAULT 15,          -- Durasi inaktivitas auto-lock brankas (menit, 0=nonaktif)
     `failed_login_attempts` INT NOT NULL DEFAULT 0,           -- Penghitung percobaan login gagal
     `locked_until`          DATETIME NULL,                    -- Waktu kunci sementara akun (brute-force defense)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -46,6 +46,9 @@ class AuthController {
                 'success' => true,
                 'kdf_salt' => $dummySalt,
                 'kdf_iterations' => 600000,
+                'kdf_algorithm' => 'pbkdf2',
+                'kdf_memory' => 65536,
+                'kdf_parallelism' => 4,
                 'totp_required' => false
             ]);
         }
@@ -54,6 +57,9 @@ class AuthController {
             'success' => true,
             'kdf_salt' => $user['kdf_salt'],
             'kdf_iterations' => (int) $user['kdf_iterations'],
+            'kdf_algorithm' => $user['kdf_algorithm'] ?? 'pbkdf2',
+            'kdf_memory' => (int) ($user['kdf_memory'] ?? 65536),
+            'kdf_parallelism' => (int) ($user['kdf_parallelism'] ?? 4),
             'totp_required' => (bool) $user['totp_enabled']
         ]);
     }
@@ -75,6 +81,10 @@ class AuthController {
 
         // Cek Rate Limiter
         if (RateLimiter::isLocked($email)) {
+            $lockedUser = User::findByEmail($email);
+            if ($lockedUser) {
+                ActivityLog::log($lockedUser['id'], 'account_locked');
+            }
             Router::json([
                 'success' => false,
                 'message' => 'Terlalu banyak percobaan gagal. Akun dikunci sementara selama 15 menit.'
@@ -84,6 +94,9 @@ class AuthController {
         $user = User::findByEmail($email);
         if (!$user || !password_verify($authKey, $user['auth_hash'])) {
             RateLimiter::recordFailure($email);
+            if ($user) {
+                ActivityLog::log($user['id'], 'login_failed');
+            }
             Router::json(['success' => false, 'message' => 'Email atau Master Password salah.'], 401);
         }
 
@@ -99,6 +112,7 @@ class AuthController {
         if (!empty($user['totp_enabled'])) {
             if (empty($totpCode) || !TotpService::verifyCode($user['totp_secret'], $totpCode)) {
                 RateLimiter::recordFailure($email);
+                ActivityLog::log($user['id'], 'login_failed');
                 Router::json([
                     'success' => false,
                     'totp_required' => true,
@@ -143,6 +157,9 @@ class AuthController {
         $authKey = trim($data['auth_key'] ?? '');
         $kdfSalt = trim($data['kdf_salt'] ?? '');
         $kdfIterations = (int) ($data['kdf_iterations'] ?? 600000);
+        $kdfAlgorithm = in_array($data['kdf_algorithm'] ?? '', ['pbkdf2', 'argon2id']) ? $data['kdf_algorithm'] : 'pbkdf2';
+        $kdfMemory = (int) ($data['kdf_memory'] ?? 65536);
+        $kdfParallelism = (int) ($data['kdf_parallelism'] ?? 4);
         $encryptedVaultKey = trim($data['encrypted_vault_key'] ?? '');
         $vaultKeyIv = trim($data['vault_key_iv'] ?? '');
         $recoveryCode = trim($data['recovery_code'] ?? '');
@@ -162,6 +179,9 @@ class AuthController {
                 'auth_key' => $authKey,
                 'kdf_salt' => $kdfSalt,
                 'kdf_iterations' => $kdfIterations,
+                'kdf_algorithm' => $kdfAlgorithm,
+                'kdf_memory' => $kdfMemory,
+                'kdf_parallelism' => $kdfParallelism,
                 'encrypted_vault_key' => $encryptedVaultKey,
                 'vault_key_iv' => $vaultKeyIv,
                 'recovery_code' => $recoveryCode

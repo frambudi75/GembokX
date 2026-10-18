@@ -24,7 +24,7 @@ spl_autoload_register(function ($class) {
 });
 
 // Test 1: Config & Environment Boot
-echo "[1/5] Testing App Configuration Boot... ";
+echo "[1/6] Testing App Configuration Boot... ";
 try {
     \App\Config\App::boot();
     $appName = \App\Config\App::env('APP_NAME', 'GembokX');
@@ -38,7 +38,7 @@ try {
 }
 
 // Test 2: TOTP Authentication Engine
-echo "[2/5] Testing TOTP 2FA Engine (RFC 6238)... ";
+echo "[2/6] Testing TOTP 2FA Engine (RFC 6238)... ";
 try {
     $secret = \App\Services\TotpService::generateSecret(16);
     if (strlen($secret) !== 16 || !preg_match('/^[A-Z2-7]+$/', $secret)) {
@@ -66,7 +66,7 @@ try {
 }
 
 // Test 3: Zero-Knowledge AES-256-GCM Roundtrip
-echo "[3/5] Testing AES-256-GCM Cryptographic Roundtrip... ";
+echo "[3/6] Testing AES-256-GCM Cryptographic Roundtrip... ";
 try {
     $key = random_bytes(32); // 256-bit key
     $iv = random_bytes(12);  // 96-bit IV
@@ -89,7 +89,7 @@ try {
 }
 
 // Test 4: Manifest & PWA Integrity
-echo "[4/5] Testing Manifest JSON Structure... ";
+echo "[4/6] Testing Manifest JSON Structure... ";
 try {
     $manifestPath = __DIR__ . '/../public/manifest.json';
     if (!file_exists($manifestPath)) throw new \Exception("public/manifest.json not found");
@@ -111,7 +111,7 @@ try {
 }
 
 // Test 5: Static Image Asset Verification
-echo "[5/5] Testing Branding Asset Presence... ";
+echo "[5/6] Testing Branding Asset Presence... ";
 try {
     $requiredAssets = [
         __DIR__ . '/../public/assets/img/icon-192.png',
@@ -129,6 +129,30 @@ try {
 } catch (\Throwable $e) {
     echo "FAILED: " . $e->getMessage() . "\n";
     $errors[] = "Brand Assets: " . $e->getMessage();
+}
+
+// Test 6: Argon2id WASM & Discord Notifier Service Verification
+echo "[6/6] Testing Argon2id WASM Library & Discord Notifier Service... ";
+try {
+    $argonPath = __DIR__ . '/../public/assets/js/argon2.umd.min.js';
+    if (!file_exists($argonPath) || filesize($argonPath) < 10000) {
+        throw new \Exception("Argon2id WASM library missing or corrupted: " . basename($argonPath));
+    }
+
+    if (!class_exists(\App\Services\DiscordNotifier::class)) {
+        throw new \Exception("App\\Services\\DiscordNotifier class failed to load");
+    }
+
+    // Verify DiscordNotifier dummy execution
+    $res = \App\Services\DiscordNotifier::send('https://example.invalid/webhook', 'webhook_test', []);
+    if ($res !== false) {
+        throw new \Exception("Expected false for invalid webhook URL");
+    }
+
+    echo "PASSED\n";
+} catch (\Throwable $e) {
+    echo "FAILED: " . $e->getMessage() . "\n";
+    $errors[] = "Argon2 & Discord: " . $e->getMessage();
 }
 
 echo "\n-------------------------------------------\n";

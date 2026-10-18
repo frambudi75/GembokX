@@ -90,6 +90,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="<?= $url('/assets/js/argon2.umd.min.js') ?>"></script>
     <script src="<?= $url('/assets/js/crypto.js') ?>"></script>
     <script src="<?= $url('/assets/js/generator.js') ?>"></script>
     <script src="<?= $url('/assets/js/app.js') ?>"></script>

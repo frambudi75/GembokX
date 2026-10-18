@@ -13,7 +13,10 @@ class ActivityLog {
 
             $stmt = $pdo->prepare("INSERT INTO activity_logs (user_id, event_type, ip_address, user_agent) VALUES (?, ?, ?, ?)");
             $stmt->execute([$userId, $eventType, $ip, $ua]);
-        } catch (\PDOException) {
+
+            // Kirim notifikasi webhook Discord secara asinkron/langsung
+            \App\Services\DiscordNotifier::sendForUser($userId, $eventType);
+        } catch (\Throwable) {
             // Jangan hentikan flow jika logging audit gagal
         }
     }

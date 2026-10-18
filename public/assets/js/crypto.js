@@ -54,9 +54,32 @@ const VaultCrypto = (() => {
     };
 
     /**
-     * Derivasi Master Key dari Master Password menggunakan PBKDF2 (SHA-256)
+     * Derivasi Master Key dari Master Password menggunakan PBKDF2 atau Argon2id (WASM)
      */
-    const deriveMasterKey = async (password, saltHex, iterations = 600000) => {
+    const deriveMasterKey = async (password, saltHex, iterations = 600000, algorithm = 'pbkdf2', memory = 65536, parallelism = 4) => {
+        if (algorithm === 'argon2id' && typeof hashwasm !== 'undefined' && typeof hashwasm.argon2id === 'function') {
+            const saltBuf = hexToBuffer(saltHex);
+            const argonIterations = (iterations && iterations <= 100) ? iterations : 3;
+            const rawKeyBytes = await hashwasm.argon2id({
+                password: password,
+                salt: new Uint8Array(saltBuf),
+                iterations: argonIterations,
+                memorySize: memory || 65536,
+                hashLength: 32,
+                parallelism: parallelism || 4,
+                outputType: 'binary'
+            });
+
+            return await window.crypto.subtle.importKey(
+                'raw',
+                rawKeyBytes,
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['encrypt', 'decrypt', 'wrapKey', 'unwrapKey']
+            );
+        }
+
+        // Standar OWASP: PBKDF2-HMAC-SHA256 via WebCrypto API
         const enc = new TextEncoder();
         const baseKey = await window.crypto.subtle.importKey(
             'raw',
@@ -72,7 +95,7 @@ const VaultCrypto = (() => {
             {
                 name: 'PBKDF2',
                 salt: saltBuf,
-                iterations: iterations,
+                iterations: iterations || 600000,
                 hash: 'SHA-256'
             },
             baseKey,

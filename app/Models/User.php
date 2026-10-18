@@ -41,11 +41,11 @@ class User {
         $stmt = $pdo->prepare("
             INSERT INTO users (
                 email, username, role, full_name, avatar, phone, is_active,
-                auth_hash, kdf_salt, kdf_iterations, 
+                auth_hash, kdf_salt, kdf_iterations, kdf_algorithm, kdf_memory, kdf_parallelism,
                 encrypted_vault_key, vault_key_iv, recovery_code_hash
             ) VALUES (
                 :email, :username, :role, :full_name, :avatar, :phone, :is_active,
-                :auth_hash, :kdf_salt, :kdf_iterations,
+                :auth_hash, :kdf_salt, :kdf_iterations, :kdf_algorithm, :kdf_memory, :kdf_parallelism,
                 :encrypted_vault_key, :vault_key_iv, :recovery_code_hash
             )
         ");
@@ -61,6 +61,9 @@ class User {
             'auth_hash' => password_hash($data['auth_key'], PASSWORD_BCRYPT),
             'kdf_salt' => $data['kdf_salt'],
             'kdf_iterations' => (int) ($data['kdf_iterations'] ?? 600000),
+            'kdf_algorithm' => $data['kdf_algorithm'] ?? 'pbkdf2',
+            'kdf_memory' => (int) ($data['kdf_memory'] ?? 65536),
+            'kdf_parallelism' => (int) ($data['kdf_parallelism'] ?? 4),
             'encrypted_vault_key' => $data['encrypted_vault_key'],
             'vault_key_iv' => $data['vault_key_iv'],
             'recovery_code_hash' => password_hash($data['recovery_code'], PASSWORD_BCRYPT)
@@ -139,5 +142,55 @@ class User {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = ?");
         return $stmt->execute([$id]);
+    }
+
+    public static function updateKdfConfig(
+        int $id,
+        string $authKey,
+        string $encryptedVaultKey,
+        string $vaultKeyIv,
+        string $kdfAlgorithm,
+        int $kdfIterations,
+        int $kdfMemory,
+        int $kdfParallelism,
+        string $kdfSalt
+    ): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("
+            UPDATE users SET 
+                auth_hash = :auth_hash,
+                encrypted_vault_key = :encrypted_vault_key,
+                vault_key_iv = :vault_key_iv,
+                kdf_algorithm = :kdf_algorithm,
+                kdf_iterations = :kdf_iterations,
+                kdf_memory = :kdf_memory,
+                kdf_parallelism = :kdf_parallelism,
+                kdf_salt = :kdf_salt
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            'auth_hash' => password_hash($authKey, PASSWORD_BCRYPT),
+            'encrypted_vault_key' => $encryptedVaultKey,
+            'vault_key_iv' => $vaultKeyIv,
+            'kdf_algorithm' => $kdfAlgorithm,
+            'kdf_iterations' => $kdfIterations,
+            'kdf_memory' => $kdfMemory,
+            'kdf_parallelism' => $kdfParallelism,
+            'kdf_salt' => $kdfSalt,
+            'id' => $id
+        ]);
+    }
+
+    public static function updateDiscordWebhook(int $id, ?string $webhookUrl): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("UPDATE users SET discord_webhook_url = ? WHERE id = ?");
+        return $stmt->execute([$webhookUrl, $id]);
+    }
+
+    public static function updateAutoLock(int $id, int $minutes): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("UPDATE users SET autolock_minutes = ? WHERE id = ?");
+        return $stmt->execute([$minutes, $id]);
     }
 }

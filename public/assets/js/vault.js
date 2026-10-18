@@ -63,17 +63,27 @@ const VaultApp = (() => {
     };
 
     /**
-     * Inisialisasi Auto-Lock Timer
+     * Inisialisasi Durasi Auto-Lock Timer
      */
+    const getAutoLockTimeoutMs = () => {
+        const stored = localStorage.getItem('pv_autolock_minutes');
+        let minutes = stored !== null ? parseInt(stored, 10) : (window.PV_CONFIG && window.PV_CONFIG.autolockMinutes !== undefined ? window.PV_CONFIG.autolockMinutes : 15);
+        if (isNaN(minutes)) minutes = 15;
+        if (minutes <= 0) return 0; // 0 = Dinonaktifkan (Jangan Pernah)
+        return minutes * 60 * 1000;
+    };
+
     const resetAutoLock = () => {
         if (autoLockTimer) clearTimeout(autoLockTimer);
+        const timeoutMs = getAutoLockTimeoutMs();
+        if (timeoutMs <= 0) return;
         autoLockTimer = setTimeout(() => {
             lockVault();
-        }, IDLE_TIMEOUT_MS);
+        }, timeoutMs);
     };
 
     const setupActivityListeners = () => {
-        ['mousemove', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+        ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
             window.addEventListener(evt, resetAutoLock, { passive: true });
         });
     };
@@ -128,11 +138,11 @@ const VaultApp = (() => {
     };
 
     /**
-     * Buka Kunci Brankas dengan Master Password
+     * Buka Kunci Brankas dengan Master Password (Mendukung PBKDF2 & Argon2id)
      */
-    const unlockWithMasterPassword = async (masterPassword, encryptedKeyB64, ivB64, saltHex, iterations) => {
+    const unlockWithMasterPassword = async (masterPassword, encryptedKeyB64, ivB64, saltHex, iterations, algorithm = 'pbkdf2', memory = 65536, parallelism = 4) => {
         try {
-            const masterKey = await VaultCrypto.deriveMasterKey(masterPassword, saltHex, iterations);
+            const masterKey = await VaultCrypto.deriveMasterKey(masterPassword, saltHex, iterations, algorithm, memory, parallelism);
             const vaultKey = await VaultCrypto.decryptVaultKey(encryptedKeyB64, ivB64, masterKey);
             activeVaultKey = vaultKey;
             await saveSessionKey(vaultKey);
@@ -326,6 +336,7 @@ const VaultApp = (() => {
                         <div class="min-w-0 flex items-center space-x-2">
                             <span class="font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">${escapeHtml(d.name || 'Tanpa Judul')}</span>
                             ${folderTag}
+                            ${(d.attachments && d.attachments.length > 0) ? `<span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 rounded" title="${d.attachments.length} berkas terlampir">📎 ${d.attachments.length}</span>` : ''}
                             <span class="privacy-sensitive text-gray-400 truncate hidden sm:inline">• ${escapeHtml(subtext)}</span>
                         </div>
                     </div>
@@ -357,6 +368,7 @@ const VaultApp = (() => {
                         <div class="flex items-center">
                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">${escapeHtml(d.name || 'Tanpa Judul')}</h4>
                             ${folderTag}
+                            ${(d.attachments && d.attachments.length > 0) ? `<span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 rounded ml-1.5" title="${d.attachments.length} berkas terlampir">📎 ${d.attachments.length}</span>` : ''}
                         </div>
                         <p class="privacy-sensitive text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${escapeHtml(subtext)}</p>
                     </div>
@@ -469,6 +481,36 @@ const VaultApp = (() => {
             </div>`;
         }
 
+        // Render Lampiran Berkas Terenkripsi (Zero-Knowledge)
+        if (d.attachments && Array.isArray(d.attachments) && d.attachments.length > 0) {
+            html += `
+            <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-800">
+                <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2.5 flex items-center space-x-1.5">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    <span>Lampiran Berkas Terenkripsi (${d.attachments.length})</span>
+                </span>
+                <div class="space-y-2">
+                    ${d.attachments.map((att, idx) => `
+                        <div class="flex items-center justify-between p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs">
+                            <div class="flex items-center space-x-2.5 truncate pr-2">
+                                <div class="w-7 h-7 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                </div>
+                                <div class="truncate">
+                                    <span class="font-medium text-gray-900 dark:text-gray-100 truncate block">${escapeHtml(att.name)}</span>
+                                    <span class="text-[10px] text-gray-400 block">${formatFileSize(att.size)}</span>
+                                </div>
+                            </div>
+                            <button type="button" onclick="VaultApp.downloadAttachment(${idx})" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-300 font-semibold rounded-md transition flex items-center space-x-1 flex-shrink-0" title="Unduh Berkas yang Sudah Didekripsi">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span>Unduh</span>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
         body.innerHTML = html;
 
         // Pasang Event Tombol
@@ -478,6 +520,44 @@ const VaultApp = (() => {
         if (editBtn) editBtn.onclick = () => openEditItemModal(item);
 
         openModal('detail-modal');
+    };
+
+    const formatFileSize = (bytes) => {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const downloadAttachment = (idx) => {
+        if (!activeDetailItem || !activeDetailItem.data || !activeDetailItem.data.attachments) return;
+        const att = activeDetailItem.data.attachments[idx];
+        if (!att || !att.data) {
+            AppToast.show('Data berkas lampiran tidak ditemukan.', 'error');
+            return;
+        }
+
+        try {
+            const byteCharacters = atob(att.data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: att.type || 'application/octet-stream' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = att.name || 'lampiran';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            AppToast.show(`Mengunduh ${att.name}...`, 'success');
+        } catch (err) {
+            AppToast.show('Gagal mengunduh berkas: ' + err.message, 'error');
+        }
     };
 
     function renderDetailField(label, val, canCopy = false, isMono = false) {
@@ -572,6 +652,10 @@ const VaultApp = (() => {
             document.getElementById('identity-idnumber').value = d.id_number || '';
             document.getElementById('identity-address').value = d.address || '';
             document.getElementById('common-notes').value = d.notes || '';
+        }
+
+        if (typeof setItemAttachments === 'function') {
+            setItemAttachments(d.attachments || []);
         }
 
         openModal('item-modal');
@@ -972,6 +1056,12 @@ const VaultApp = (() => {
         setDensity,
         togglePrivacyMode,
         initPrivacyMode,
-        applyTemplate
+        applyTemplate,
+        downloadAttachment,
+        resetAutoLock,
+        setAutoLockMinutes: (mins) => {
+            localStorage.setItem('pv_autolock_minutes', mins);
+            resetAutoLock();
+        }
     };
 })();

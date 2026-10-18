@@ -242,4 +242,130 @@ class SettingsController {
             'size_kb' => $finalSizeKb
         ]);
     }
+
+    /**
+     * Memperbarui Algoritma Derivasi Kunci (KDF) dan Re-enkripsi Kunci Brankas
+     */
+    public function updateKdf(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $currentAuthKey = trim($data['current_auth_key'] ?? '');
+        $newAuthKey = trim($data['new_auth_key'] ?? '');
+        $newEncryptedVaultKey = trim($data['new_encrypted_vault_key'] ?? '');
+        $newVaultKeyIv = trim($data['new_vault_key_iv'] ?? '');
+        $newAlgorithm = in_array($data['new_kdf_algorithm'] ?? '', ['pbkdf2', 'argon2id']) ? $data['new_kdf_algorithm'] : 'pbkdf2';
+        $newIterations = (int) ($data['new_kdf_iterations'] ?? ($newAlgorithm === 'argon2id' ? 3 : 600000));
+        $newMemory = (int) ($data['new_kdf_memory'] ?? 65536);
+        $newParallelism = (int) ($data['new_kdf_parallelism'] ?? 4);
+        $newSalt = trim($data['new_kdf_salt'] ?? '');
+
+        if (empty($currentAuthKey) || empty($newAuthKey) || empty($newEncryptedVaultKey) || empty($newVaultKeyIv) || empty($newSalt)) {
+            Router::json(['success' => false, 'message' => 'Parameter derivasi KDF tidak lengkap.'], 400);
+        }
+
+        $user = User::findById($userId);
+        if (!password_verify($currentAuthKey, $user['auth_hash'])) {
+            Router::json(['success' => false, 'message' => 'Master Password saat ini tidak sesuai.'], 401);
+        }
+
+        User::updateKdfConfig(
+            $userId,
+            $newAuthKey,
+            $newEncryptedVaultKey,
+            $newVaultKeyIv,
+            $newAlgorithm,
+            $newIterations,
+            $newMemory,
+            $newParallelism,
+            $newSalt
+        );
+
+        SessionService::clearUserCache($userId);
+        $updatedUser = User::findById($userId);
+        SessionService::login($updatedUser);
+        ActivityLog::log($userId, 'master_key_changed');
+
+        Router::json([
+            'success' => true,
+            'message' => 'Algoritma derivasi kunci (KDF) berhasil diperbarui ke ' . strtoupper($newAlgorithm) . '!'
+        ]);
+    }
+
+    /**
+     * Memperbarui Webhook URL Discord Pengguna
+     */
+    public function updateDiscord(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $webhookUrl = trim($data['webhook_url'] ?? '');
+        if (!empty($webhookUrl) && !filter_var($webhookUrl, FILTER_VALIDATE_URL)) {
+            Router::json(['success' => false, 'message' => 'Format Webhook URL Discord tidak valid.'], 400);
+        }
+
+        User::updateDiscordWebhook($userId, !empty($webhookUrl) ? $webhookUrl : null);
+        SessionService::clearUserCache($userId);
+
+        Router::json([
+            'success' => true,
+            'message' => !empty($webhookUrl) 
+                ? 'Webhook Discord berhasil disimpan! Notifikasi keamanan real-time kini aktif.'
+                : 'Webhook Discord telah dinonaktifkan.'
+        ]);
+    }
+
+    /**
+     * Menguji Pengiriman Webhook ke Discord
+     */
+    public function testDiscord(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $webhookUrl = trim($data['webhook_url'] ?? '');
+        if (empty($webhookUrl)) {
+            $user = User::findById($userId);
+            $webhookUrl = trim($user['discord_webhook_url'] ?? '');
+        }
+
+        if (empty($webhookUrl) || !filter_var($webhookUrl, FILTER_VALIDATE_URL)) {
+            Router::json(['success' => false, 'message' => 'Masukkan Webhook URL Discord yang valid.'], 400);
+        }
+
+        $user = User::findById($userId);
+        $ok = \App\Services\DiscordNotifier::send($webhookUrl, 'webhook_test', [
+            'user_email' => $user['email'],
+            'user_name' => $user['username']
+        ]);
+
+        if ($ok) {
+            Router::json(['success' => true, 'message' => 'Notifikasi uji coba berhasil dikirim ke saluran Discord Anda!']);
+        } else {
+            Router::json(['success' => false, 'message' => 'Gagal mengirim ke Discord. Periksa izin saluran atau format URL Webhook.'], 500);
+        }
+    }
+
+    /**
+     * Memperbarui Durasi Auto-Lock Inaktivitas
+     */
+    public function updateAutoLock(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $minutes = max(0, min(1440, (int) ($data['minutes'] ?? 15)));
+        User::updateAutoLock($userId, $minutes);
+        SessionService::clearUserCache($userId);
+
+        Router::json([
+            'success' => true,
+            'message' => $minutes > 0 
+                ? "Brankas akan otomatis terkunci setelah {$minutes} menit inaktivitas."
+                : "Auto-lock inaktivitas telah dinonaktifkan.",
+            'minutes' => $minutes
+        ]);
+    }
 }

@@ -157,6 +157,25 @@
                 <textarea id="common-notes" rows="2" placeholder="Informasi tambahan terkait item ini..." class="w-full px-3.5 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition text-gray-900 dark:text-white"></textarea>
             </div>
 
+            <!-- Lampiran Berkas Terenkripsi (Zero-Knowledge) -->
+            <div class="pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center space-x-1.5">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                        <span>Lampiran Berkas (Enkripsi Client-Side)</span>
+                    </label>
+                    <label for="item-attachment-input" class="cursor-pointer text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1 font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Tambah Berkas</span>
+                    </label>
+                    <input type="file" id="item-attachment-input" multiple class="hidden" onchange="handleAttachmentUpload(this.files)">
+                </div>
+                <div id="item-attachments-list" class="space-y-1.5 max-h-36 overflow-y-auto">
+                    <p class="text-[11px] text-gray-400 italic">Belum ada berkas terlampir.</p>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-1">Dapat melampirkan berkas kunci SSH, sertifikat, atau dokumen rahasia (Maks 10MB/berkas). Berkas dienkripsi penuh di browser sebelum dikirim.</p>
+            </div>
+
             <!-- Footer Buttons -->
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <button type="button" onclick="closeModal('item-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition">Batal</button>
@@ -169,6 +188,87 @@
 </div>
 
 <script>
+    let currentItemAttachments = [];
+
+    function renderItemAttachmentsUI() {
+        const list = document.getElementById('item-attachments-list');
+        if (!list) return;
+        if (!currentItemAttachments || currentItemAttachments.length === 0) {
+            list.innerHTML = '<p class="text-[11px] text-gray-400 italic">Belum ada berkas terlampir.</p>';
+            return;
+        }
+
+        list.innerHTML = currentItemAttachments.map((att, idx) => `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-xs">
+                <div class="flex items-center space-x-2 truncate pr-2">
+                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="font-medium text-gray-800 dark:text-gray-200 truncate">${escapeHtml(att.name)}</span>
+                    <span class="text-[10px] text-gray-400">(${formatBytes(att.size)})</span>
+                </div>
+                <button type="button" onclick="removeAttachment(${idx})" class="p-1 text-gray-400 hover:text-rose-500 rounded transition" title="Hapus Lampiran">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async function handleAttachmentUpload(files) {
+        if (!files || files.length === 0) return;
+        const maxBytes = 10 * 1024 * 1024; // 10MB
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > maxBytes) {
+                AppToast.show(`Berkas "${file.name}" melebihi batas 10MB!`, 'error');
+                continue;
+            }
+            try {
+                const base64 = await readFileAsBase64(file);
+                currentItemAttachments.push({
+                    id: 'att_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    name: file.name,
+                    size: file.size,
+                    type: file.type || 'application/octet-stream',
+                    data: base64
+                });
+            } catch (err) {
+                AppToast.show(`Gagal membaca ${file.name}: ` + err.message, 'error');
+            }
+        }
+        document.getElementById('item-attachment-input').value = '';
+        renderItemAttachmentsUI();
+    }
+
+    function removeAttachment(index) {
+        currentItemAttachments.splice(index, 1);
+        renderItemAttachmentsUI();
+    }
+
+    function setItemAttachments(attachments) {
+        currentItemAttachments = Array.isArray(attachments) ? attachments.slice() : [];
+        renderItemAttachmentsUI();
+    }
+
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const res = reader.result;
+                const base64 = res.split(',')[1] || '';
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
     function setItemType(type) {
         document.getElementById('item-type').value = type;
         document.querySelectorAll('.type-selector-btn').forEach(b => {
@@ -197,6 +297,7 @@
         document.getElementById('item-form').reset();
         document.getElementById('item-id').value = '';
         document.getElementById('item-is-favorite').value = '0';
+        setItemAttachments([]);
         setItemType(type);
         openModal('item-modal');
     }
@@ -234,7 +335,8 @@
 
         const payload = {
             name: name,
-            type: type
+            type: type,
+            attachments: currentItemAttachments
         };
 
         if (type === 'login') {
