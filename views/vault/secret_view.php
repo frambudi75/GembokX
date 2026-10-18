@@ -99,7 +99,7 @@
     <!-- Toast Notification Container -->
     <div id="secret-toast" class="fixed bottom-5 right-5 z-50 hidden bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-2 text-xs shadow-xl font-medium"></div>
 
-    <script src="<?= $url('/assets/js/crypto.js') ?>"></script>
+    <script src="<?= $url('/assets/js/crypto.js?v=2.3') ?>"></script>
     <script>
         let isMasked = false;
         let originalPass = '';
