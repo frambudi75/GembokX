@@ -65,6 +65,18 @@
         statusMsg.textContent = 'Mendapatkan parameter kriptografi (Prelogin)...';
         statusMsg.classList.remove('hidden');
 
+        async function parseSafeJson(res) {
+            const text = await res.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                if (res.status === 503) {
+                    throw new Error('Layanan database sedang bersiap atau melakukan perbaikan skema. Silakan coba sesaat lagi.');
+                }
+                throw new Error('Gagal memproses respon server (' + res.status + '). Silakan periksa koneksi atau coba sesaat lagi.');
+            }
+        }
+
         try {
             // 1. Ambil Salt & KDF Iterations
             const preRes = await fetch(window.PV_CONFIG.routes.prelogin, {
@@ -77,7 +89,7 @@
                 body: JSON.stringify({ email: email, csrf_token: window.PV_CONFIG.csrfToken })
             });
 
-            const preData = await preRes.json();
+            const preData = await parseSafeJson(preRes);
             if (!preData.success) throw new Error(preData.message);
 
             if (preData.totp_required && !totpCode && totpContainer.classList.contains('hidden')) {
@@ -122,7 +134,7 @@
                 })
             });
 
-            const loginData = await loginRes.json();
+            const loginData = await parseSafeJson(loginRes);
             if (!loginData.success) {
                 if (loginData.totp_required) {
                     totpContainer.classList.remove('hidden');

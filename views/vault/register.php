@@ -164,7 +164,17 @@
                 })
             });
 
-            const data = await res.json();
+            let data;
+            const resText = await res.text();
+            try {
+                data = JSON.parse(resText);
+            } catch (e) {
+                if (res.status === 503) {
+                    throw new Error('Layanan database sedang melakukan perbaikan skema. Silakan coba sesaat lagi.');
+                }
+                throw new Error('Gagal memproses respon server (' + res.status + '). Silakan coba sesaat lagi.');
+            }
+
             if (!data.success) throw new Error(data.message);
 
             // Tampilkan Modal Recovery Code

@@ -24,7 +24,7 @@ spl_autoload_register(function ($class) {
 });
 
 // Test 1: Config & Environment Boot
-echo "[1/6] Testing App Configuration Boot... ";
+echo "[1/7] Testing App Configuration Boot... ";
 try {
     \App\Config\App::boot();
     $appName = \App\Config\App::env('APP_NAME', 'GembokX');
@@ -38,7 +38,7 @@ try {
 }
 
 // Test 2: TOTP Authentication Engine
-echo "[2/6] Testing TOTP 2FA Engine (RFC 6238)... ";
+echo "[2/7] Testing TOTP 2FA Engine (RFC 6238)... ";
 try {
     $secret = \App\Services\TotpService::generateSecret(16);
     if (strlen($secret) !== 16 || !preg_match('/^[A-Z2-7]+$/', $secret)) {
@@ -66,7 +66,7 @@ try {
 }
 
 // Test 3: Zero-Knowledge AES-256-GCM Roundtrip
-echo "[3/6] Testing AES-256-GCM Cryptographic Roundtrip... ";
+echo "[3/7] Testing AES-256-GCM Cryptographic Roundtrip... ";
 try {
     $key = random_bytes(32); // 256-bit key
     $iv = random_bytes(12);  // 96-bit IV
@@ -89,7 +89,7 @@ try {
 }
 
 // Test 4: Manifest & PWA Integrity
-echo "[4/6] Testing Manifest JSON Structure... ";
+echo "[4/7] Testing Manifest JSON Structure... ";
 try {
     $manifestPath = __DIR__ . '/../public/manifest.json';
     if (!file_exists($manifestPath)) throw new \Exception("public/manifest.json not found");
@@ -111,7 +111,7 @@ try {
 }
 
 // Test 5: Static Image Asset Verification
-echo "[5/6] Testing Branding Asset Presence... ";
+echo "[5/7] Testing Branding Asset Presence... ";
 try {
     $requiredAssets = [
         __DIR__ . '/../public/assets/img/icon-192.png',
@@ -132,7 +132,7 @@ try {
 }
 
 // Test 6: Argon2id WASM & Discord Notifier Service Verification
-echo "[6/6] Testing Argon2id WASM Library & Discord Notifier Service... ";
+echo "[6/7] Testing Argon2id WASM Library & Discord Notifier Service... ";
 try {
     $argonPath = __DIR__ . '/../public/assets/js/argon2.umd.min.js';
     if (!file_exists($argonPath) || filesize($argonPath) < 10000) {
@@ -153,6 +153,34 @@ try {
 } catch (\Throwable $e) {
     echo "FAILED: " . $e->getMessage() . "\n";
     $errors[] = "Argon2 & Discord: " . $e->getMessage();
+}
+
+// Test 7: Database Self-Repair Engine & Environment Resolution
+echo "[7/7] Testing Database Self-Repair Engine & App::env Resolution... ";
+try {
+    // 1. Verify getenv takes precedence
+    putenv('GEMBOKX_TEST_VAR=container_val');
+    $resolved = \App\Config\App::env('GEMBOKX_TEST_VAR', 'fallback');
+    if ($resolved !== 'container_val') {
+        throw new \Exception("App::env failed to prioritize container environment variable");
+    }
+    putenv('GEMBOKX_TEST_VAR'); // clear
+
+    // 2. Verify Database::getConnection and self-healing schema
+    $pdo = \App\Config\Database::getConnection();
+    \App\Config\Database::ensureSchema($pdo);
+    
+    $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+    $required = ['users', 'folders', 'vault_items', 'activity_logs', 'shared_items', 'secret_links'];
+    $diff = array_diff($required, $tables);
+    if (!empty($diff)) {
+        throw new \Exception("Missing required tables after ensureSchema: " . implode(', ', $diff));
+    }
+
+    echo "PASSED\n";
+} catch (\Throwable $e) {
+    echo "FAILED: " . $e->getMessage() . "\n";
+    $errors[] = "DB Self-Repair: " . $e->getMessage();
 }
 
 echo "\n-------------------------------------------\n";

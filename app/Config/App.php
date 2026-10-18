@@ -42,7 +42,23 @@ class App {
         if (!self::$booted) {
             self::boot();
         }
-        return self::$env[$key] ?? $_SERVER[$key] ?? $default;
+
+        // 1. Prioritaskan Environment Variables dari sistem / Docker container
+        $envVal = getenv($key);
+        if ($envVal !== false && $envVal !== '') {
+            return $envVal;
+        }
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return $_ENV[$key];
+        }
+
+        // 2. Cek file .env lokal
+        if (isset(self::$env[$key])) {
+            return self::$env[$key];
+        }
+
+        // 3. Fallback ke $_SERVER atau default
+        return $_SERVER[$key] ?? $default;
     }
 
     public static function isDebug(): bool {
