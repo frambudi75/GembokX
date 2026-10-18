@@ -212,12 +212,12 @@ docker-compose up -d --build
 
 ---
 
-### 👤 Akun Pengguna & Seeder Demo
+### 👤 Manajemen Akun Pengguna
 
-#### 1. Instalasi Baru (Fresh / Production):
-- Database dimulai dalam kondisi **bersih tanpa akun bawaan** (`0 users`).
-- Silakan buka halaman login dan klik **Daftar Akun Baru** (`/register`) untuk membuat akun pribadi Anda.
-- **Hak Akses Admin:** Pengguna pertama yang mendaftar otomatis ditetapkan sebagai **Administrator** sistem.
+#### 1. Registrasi Akun Terpusat (Keamanan Tinggi):
+- Pendaftaran mandiri publik (`/register`) **dinonaktifkan** secara default untuk mencegah pendaftaran sembarangan oleh pihak yang tidak diizinkan.
+- Pembuatan akun pengguna baru dilakukan secara eksklusif oleh **Administrator** melalui panel **Kelola Pengguna** (`/admin/users`).
+- Pengguna pertama yang terdaftar pada sistem bertindak sebagai Administrator utama.
 
 #### 2. Akun Demo untuk Pengujian Lokal (Opsional):
 - Jika Anda ingin mengisi data demo (kategori & item brankas contoh) untuk pengujian, jalankan perintah seeder berikut:
@@ -231,6 +231,21 @@ docker-compose up -d --build
 - **Kredensial Akun Demo:**
   - **Email:** `demo@gembokx.local`
   - **Master Password:** `GembokXAdmin2026!`
+
+---
+
+### 💾 Backup Otomatis Database Lokal
+
+GembokX menyediakan skrip backup otomatis database terkompresi (`.sql.gz`) dengan retensi rotasi otomatis 7 hari:
+
+```bash
+# Menjalankan backup manual:
+docker compose exec web bash /var/www/html/scripts/backup_db.sh
+
+# Atau pasang di crontab host / server (jalan setiap hari pukul 02:00 malam):
+# 0 2 * * * docker exec gembokx_web bash /var/www/html/scripts/backup_db.sh >/dev/null 2>&1
+```
+Berkas backup disimpan secara aman di direktori `storage/backups/`.
 
 ---
 

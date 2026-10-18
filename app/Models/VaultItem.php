@@ -8,19 +8,38 @@ class VaultItem {
     public static function getAllByUser(int $userId): array {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("
-            SELECT id, folder_id, item_type, is_favorite, encrypted_payload, iv, auth_tag, created_at, updated_at 
+            SELECT id, folder_id, item_type, is_favorite, encrypted_payload, iv, auth_tag, created_at, updated_at, deleted_at 
             FROM vault_items 
-            WHERE user_id = ? 
+            WHERE user_id = ? AND deleted_at IS NULL 
             ORDER BY is_favorite DESC, updated_at DESC
         ");
         $stmt->execute([$userId]);
         return $stmt->fetchAll();
     }
 
+    public static function getTrashByUser(int $userId): array {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("
+            SELECT id, folder_id, item_type, is_favorite, encrypted_payload, iv, auth_tag, created_at, updated_at, deleted_at 
+            FROM vault_items 
+            WHERE user_id = ? AND deleted_at IS NOT NULL 
+            ORDER BY deleted_at DESC
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
+    public static function countTrashByUser(int $userId): int {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM vault_items WHERE user_id = ? AND deleted_at IS NOT NULL");
+        $stmt->execute([$userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function getById(int $id, int $userId): ?array {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("
-            SELECT id, folder_id, item_type, is_favorite, encrypted_payload, iv, auth_tag, created_at, updated_at 
+            SELECT id, folder_id, item_type, is_favorite, encrypted_payload, iv, auth_tag, created_at, updated_at, deleted_at 
             FROM vault_items 
             WHERE id = ? AND user_id = ? 
             LIMIT 1
@@ -78,10 +97,41 @@ class VaultItem {
         ]);
     }
 
+    /**
+     * Soft Delete (Pindahkan ke Tempat Sampah)
+     */
     public static function delete(int $id, int $userId): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("UPDATE vault_items SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
+        return $stmt->execute([$id, $userId]);
+    }
+
+    /**
+     * Pulihkan Item dari Tempat Sampah
+     */
+    public static function restore(int $id, int $userId): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("UPDATE vault_items SET deleted_at = NULL WHERE id = ? AND user_id = ?");
+        return $stmt->execute([$id, $userId]);
+    }
+
+    /**
+     * Hapus Item Secara Permanen
+     */
+    public static function destroy(int $id, int $userId): bool {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("DELETE FROM vault_items WHERE id = ? AND user_id = ?");
         return $stmt->execute([$id, $userId]);
+    }
+
+    /**
+     * Kosongkan Seluruh Tempat Sampah
+     */
+    public static function emptyTrash(int $userId): int {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("DELETE FROM vault_items WHERE user_id = ? AND deleted_at IS NOT NULL");
+        $stmt->execute([$userId]);
+        return $stmt->rowCount();
     }
 
     public static function toggleFavorite(int $id, int $userId): bool {

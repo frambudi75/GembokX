@@ -7,6 +7,7 @@ const VaultApp = (() => {
 
     let activeVaultKey = null;
     let decryptedItems = [];
+    let decryptedTrashItems = [];
     let decryptedFolders = [];
     let currentFilterType = 'all';
     let currentFolderId = null;
@@ -155,6 +156,31 @@ const VaultApp = (() => {
     };
 
     /**
+     * Sinkronisasi Badge Jumlah Item di Tempat Sampah
+     */
+    const updateTrashBadges = (count) => {
+        const badge = document.getElementById('trash-count-badge');
+        const mobileBadge = document.getElementById('trash-count-mobile');
+        const num = parseInt(count, 10) || 0;
+        if (badge) {
+            badge.textContent = num;
+            if (num > 0) {
+                badge.className = 'px-1.5 py-0.5 text-[10px] font-bold bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300 rounded-full';
+            } else {
+                badge.className = 'px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full';
+            }
+        }
+        if (mobileBadge) {
+            mobileBadge.textContent = num;
+            if (num > 0) {
+                mobileBadge.classList.remove('hidden');
+            } else {
+                mobileBadge.classList.add('hidden');
+            }
+        }
+    };
+
+    /**
      * Muat dan Dekripsi Data dari Server
      */
     const syncAndDecrypt = async () => {
@@ -169,6 +195,11 @@ const VaultApp = (() => {
             });
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
+
+            // Update Badge Tempat Sampah
+            if (data.trash_count !== undefined) {
+                updateTrashBadges(data.trash_count);
+            }
 
             // Dekripsi Folder
             decryptedFolders = [];
@@ -205,6 +236,54 @@ const VaultApp = (() => {
     };
 
     /**
+     * Memuat dan Mendekripsi Seluruh Item di Tempat Sampah
+     */
+    const loadTrashItems = async () => {
+        if (!activeVaultKey) return;
+        const container = document.getElementById('vault-items-container');
+        if (container) {
+            container.innerHTML = `
+            <div class="p-8 text-center text-sm text-gray-400 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <svg class="animate-spin h-6 w-6 text-rose-500 mx-auto mb-2.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                <span class="font-medium text-xs">Mendekripsi data Tempat Sampah...</span>
+            </div>`;
+        }
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.trash, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                }
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            decryptedTrashItems = [];
+            for (const item of (data.items || [])) {
+                const payload = await VaultCrypto.decryptData(item.encrypted_payload, item.iv, activeVaultKey);
+                if (payload) {
+                    decryptedTrashItems.push({
+                        id: item.id,
+                        folder_id: item.folder_id,
+                        item_type: item.item_type,
+                        is_favorite: parseInt(item.is_favorite) === 1,
+                        updated_at: item.updated_at,
+                        deleted_at: item.deleted_at,
+                        data: payload
+                    });
+                }
+            }
+
+            updateTrashBadges(decryptedTrashItems.length);
+            renderVaultUI();
+        } catch (err) {
+            console.error('Gagal memuat Tempat Sampah:', err);
+            AppToast.show('Gagal memuat Tempat Sampah: ' + err.message, 'error');
+        }
+    };
+
+    /**
      * Render Daftar Item di Dashboard
      */
     const renderVaultUI = (searchQuery = '') => {
@@ -213,18 +292,21 @@ const VaultApp = (() => {
         const countBadge = document.getElementById('vault-count-badge');
         if (!container) return;
 
-        let filtered = decryptedItems;
+        const isTrash = (currentFilterType === 'trash');
+        let filtered = isTrash ? decryptedTrashItems : decryptedItems;
 
-        // Filter berdasarkan Tipe
-        if (currentFilterType === 'favorite') {
-            filtered = filtered.filter(i => i.is_favorite);
-        } else if (currentFilterType !== 'all') {
-            filtered = filtered.filter(i => i.item_type === currentFilterType);
-        }
+        if (!isTrash) {
+            // Filter berdasarkan Tipe
+            if (currentFilterType === 'favorite') {
+                filtered = filtered.filter(i => i.is_favorite);
+            } else if (currentFilterType !== 'all') {
+                filtered = filtered.filter(i => i.item_type === currentFilterType);
+            }
 
-        // Filter berdasarkan Folder
-        if (currentFolderId !== null) {
-            filtered = filtered.filter(i => i.folder_id == currentFolderId);
+            // Filter berdasarkan Folder
+            if (currentFolderId !== null) {
+                filtered = filtered.filter(i => i.folder_id == currentFolderId);
+            }
         }
 
         // Filter Pencarian Teks (0ms Realtime)
@@ -244,8 +326,20 @@ const VaultApp = (() => {
         }
 
         if (filtered.length === 0) {
-            container.innerHTML = '';
-            if (emptyState) emptyState.classList.remove('hidden');
+            if (isTrash) {
+                container.innerHTML = `
+                <div class="py-12 px-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto mb-3 border border-rose-100 dark:border-rose-900/40">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white">Tempat Sampah Kosong</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-1">Tidak ada item yang berada di tempat sampah saat ini.</p>
+                </div>`;
+                if (emptyState) emptyState.classList.add('hidden');
+            } else {
+                container.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+            }
             return;
         }
 
@@ -342,19 +436,30 @@ const VaultApp = (() => {
                     </div>
                     
                     <div class="flex items-center space-x-1 flex-shrink-0" onclick="event.stopPropagation()">
+                        ${isTrash ? `
+                        <button type="button" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-md border border-emerald-200 dark:border-emerald-800/60 transition flex items-center space-x-1" title="Pulihkan" onclick="VaultApp.restoreItem(${item.id})">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Pulihkan</span>
+                        </button>
+                        <button type="button" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-md border border-rose-200 dark:border-rose-800/60 transition flex items-center space-x-1" title="Hapus Permanen" onclick="VaultApp.destroyItemConfirm(${item.id})">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <span>Hapus</span>
+                        </button>
+                        ` : `
                         ${d.username ? `
-                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Username" onclick="VaultApp.copyToClipboard('${escapeJs(d.username)}', 'Username disalin!')">
+                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Username" onclick="VaultApp.copyToClipboard('${escapeJs(d.username)}', 'Username disalin!', this)">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         </button>` : ''}
 
                         ${d.password ? `
-                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Kata Sandi" onclick="VaultApp.copyToClipboard('${escapeJs(d.password)}', 'Kata sandi disalin!')">
+                        <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Kata Sandi" onclick="VaultApp.copyToClipboard('${escapeJs(d.password)}', 'Kata sandi disalin!', this)">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                         </button>` : ''}
 
                         <button type="button" class="w-7 h-7 flex items-center justify-center ${isFav ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'} rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="${isFav ? 'Hapus dari Favorit' : 'Jadikan Favorit'}" onclick="VaultApp.toggleFavorite(${item.id})">
                             <svg class="w-3.5 h-3.5" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                         </button>
+                        `}
                     </div>
                 </div>`;
             }
@@ -375,19 +480,30 @@ const VaultApp = (() => {
                 </div>
                 
                 <div class="flex items-center space-x-1.5 flex-shrink-0" onclick="event.stopPropagation()">
+                    ${isTrash ? `
+                    <button type="button" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-200 dark:border-emerald-800/60 transition flex items-center space-x-1" title="Pulihkan Item" onclick="VaultApp.restoreItem(${item.id})">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Pulihkan</span>
+                    </button>
+                    <button type="button" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-lg border border-rose-200 dark:border-rose-800/60 transition flex items-center space-x-1" title="Hapus Permanen" onclick="VaultApp.destroyItemConfirm(${item.id})">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Hapus</span>
+                    </button>
+                    ` : `
                     ${d.username ? `
-                    <button type="button" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Username" onclick="VaultApp.copyToClipboard('${escapeJs(d.username)}', 'Username disalin!')">
+                    <button type="button" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Username" onclick="VaultApp.copyToClipboard('${escapeJs(d.username)}', 'Username disalin!', this)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </button>` : ''}
 
                     ${d.password ? `
-                    <button type="button" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Kata Sandi" onclick="VaultApp.copyToClipboard('${escapeJs(d.password)}', 'Kata sandi disalin!')">
+                    <button type="button" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Salin Kata Sandi" onclick="VaultApp.copyToClipboard('${escapeJs(d.password)}', 'Kata sandi disalin!', this)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                     </button>` : ''}
 
                     <button type="button" class="w-10 h-10 flex items-center justify-center ${isFav ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="${isFav ? 'Hapus dari Favorit' : 'Jadikan Favorit'}" onclick="VaultApp.toggleFavorite(${item.id})">
                         <svg class="w-4 h-4" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                     </button>
+                    `}
                 </div>
             </div>`;
         }).join('');
@@ -397,7 +513,9 @@ const VaultApp = (() => {
      * Tampilkan Modal Detail Item
      */
     const showDetailModal = (itemId) => {
-        const item = decryptedItems.find(i => i.id == itemId);
+        const item = (currentFilterType === 'trash' ? decryptedTrashItems : decryptedItems).find(i => i.id == itemId)
+            || decryptedItems.find(i => i.id == itemId)
+            || decryptedTrashItems.find(i => i.id == itemId);
         if (!item) return;
 
         activeDetailItem = item;
@@ -444,7 +562,7 @@ const VaultApp = (() => {
                     <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Situs Web</span>
                     <div class="flex items-center justify-between">
                         <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[80%]">${escapeHtml(d.url)}</a>
-                        <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(d.url)}', 'URL disalin!')" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin URL">
+                        <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(d.url)}', 'URL disalin!', this)" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin URL">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                         </button>
                     </div>
@@ -464,7 +582,7 @@ const VaultApp = (() => {
                 <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Isi Catatan Rahasia</span>
                 <div class="text-sm font-mono whitespace-pre-wrap select-all text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">${escapeHtml(d.notes || 'Catatan kosong')}</div>
                 <div class="mt-2 flex justify-end">
-                    <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(d.notes || '')}', 'Catatan disalin!')" class="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition font-medium">Salin Seluruh Catatan</button>
+                    <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(d.notes || '')}', 'Catatan disalin!', this)" class="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition font-medium">Salin Seluruh Catatan</button>
                 </div>
             </div>`;
         } else if (item.item_type === 'identity') {
@@ -514,10 +632,33 @@ const VaultApp = (() => {
         body.innerHTML = html;
 
         // Pasang Event Tombol
+        const isTrashItem = (currentFilterType === 'trash' || item.deleted_at);
         const delBtn = document.getElementById('detail-delete-btn');
-        if (delBtn) delBtn.onclick = () => deleteItem(item.id);
         const editBtn = document.getElementById('detail-edit-btn');
-        if (editBtn) editBtn.onclick = () => openEditItemModal(item);
+
+        if (isTrashItem) {
+            if (delBtn) {
+                delBtn.textContent = 'Hapus Permanen';
+                delBtn.onclick = () => destroyItemConfirm(item.id);
+            }
+            if (editBtn) {
+                editBtn.textContent = 'Pulihkan Item';
+                editBtn.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition';
+                editBtn.onclick = () => restoreItem(item.id);
+            }
+            if (favBtn) favBtn.classList.add('hidden');
+        } else {
+            if (delBtn) {
+                delBtn.textContent = 'Hapus';
+                delBtn.onclick = () => deleteItem(item.id);
+            }
+            if (editBtn) {
+                editBtn.textContent = 'Ubah Item';
+                editBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition';
+                editBtn.onclick = () => openEditItemModal(item);
+            }
+            if (favBtn) favBtn.classList.remove('hidden');
+        }
 
         openModal('detail-modal');
     };
@@ -567,7 +708,7 @@ const VaultApp = (() => {
             <div class="flex items-center justify-between">
                 <span class="privacy-sensitive text-sm ${isMono ? 'font-mono' : ''} text-gray-900 dark:text-gray-100 truncate">${escapeHtml(val)}</span>
                 ${canCopy ? `
-                <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(val)}', '${escapeJs(label)} disalin!')" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin">
+                <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(val)}', '${escapeJs(label)} disalin!', this)" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                 </button>` : ''}
             </div>
@@ -585,7 +726,7 @@ const VaultApp = (() => {
                     <button type="button" onclick="VaultApp.toggleDetailPassword('${randId}')" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Lihat/Sembunyikan">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                     </button>
-                    <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(pwd)}', '${escapeJs(label)} disalin!')" class="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin">
+                    <button type="button" onclick="VaultApp.copyToClipboard('${escapeJs(pwd)}', '${escapeJs(label)} disalin!', this)" class="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Salin">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                     </button>
                 </div>
@@ -705,11 +846,26 @@ const VaultApp = (() => {
     let clipboardClearTimer = null;
 
     /**
-     * Salin ke Clipboard dengan Auto-Clear Otomatis demi Keamanan
+     * Salin ke Clipboard dengan Visual Button Morphing dan Auto-Clear Otomatis
      */
-    const copyToClipboard = async (text, message = 'Disalin ke clipboard!') => {
+    const copyToClipboard = async (text, message = 'Disalin ke clipboard!', btnEl = null) => {
         try {
             await navigator.clipboard.writeText(text);
+
+            // Visual Button Morphing Feedback (Green checkmark for 1200ms)
+            if (btnEl && btnEl instanceof HTMLElement) {
+                const origHtml = btnEl.innerHTML;
+                const origClasses = btnEl.className;
+                btnEl.disabled = true;
+                btnEl.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500 inline-block transform scale-110 transition duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
+                btnEl.classList.add('bg-emerald-50', 'dark:bg-emerald-950/60', 'text-emerald-600', 'ring-1', 'ring-emerald-400/50');
+
+                setTimeout(() => {
+                    btnEl.innerHTML = origHtml;
+                    btnEl.className = origClasses;
+                    btnEl.disabled = false;
+                }, 1200);
+            }
 
             const timeoutSec = parseInt(localStorage.getItem('pv_clipboard_clear_seconds') || '30', 10);
             if (timeoutSec > 0) {
@@ -780,10 +936,10 @@ const VaultApp = (() => {
     };
 
     /**
-     * Hapus Item
+     * Hapus Item (Soft Delete / Pindahkan ke Tempat Sampah)
      */
     const deleteItem = async (id) => {
-        if (!confirm('Yakin ingin menghapus item ini dari brankas secara permanen?')) return;
+        if (!confirm('Pindahkan item ini ke Tempat Sampah?')) return;
 
         try {
             const res = await fetch(window.PV_CONFIG.routes.deleteItem, {
@@ -799,11 +955,114 @@ const VaultApp = (() => {
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
 
-            AppToast.show(data.message, 'success');
+            AppToast.show(data.message || 'Item dipindahkan ke Tempat Sampah.', 'success');
+            if (data.trash_count !== undefined) {
+                updateTrashBadges(data.trash_count);
+            }
             await syncAndDecrypt();
             closeModal('detail-modal');
         } catch (err) {
-            AppToast.show('Gagal menghapus: ' + err.message, 'error');
+            AppToast.show('Gagal memindahkan item: ' + err.message, 'error');
+        }
+    };
+
+    /**
+     * Pulihkan Item dari Tempat Sampah ke Brankas
+     */
+    const restoreItem = async (id) => {
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.restoreItem, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({ id: id, csrf_token: window.PV_CONFIG.csrfToken })
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            AppToast.show(data.message || 'Item berhasil dipulihkan ke brankas.', 'success');
+            if (data.trash_count !== undefined) {
+                updateTrashBadges(data.trash_count);
+            }
+            decryptedTrashItems = decryptedTrashItems.filter(i => i.id !== id);
+            closeModal('detail-modal');
+            if (currentFilterType === 'trash') {
+                renderVaultUI();
+            } else {
+                await syncAndDecrypt();
+            }
+        } catch (err) {
+            AppToast.show('Gagal memulihkan item: ' + err.message, 'error');
+        }
+    };
+
+    /**
+     * Hapus Item Permanen dari Server
+     */
+    const destroyItemConfirm = async (id) => {
+        if (!confirm('Hapus item ini secara permanen dari server? Tindakan ini TIDAK DAPAT DIBATALKAN!')) return;
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.destroyItem, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({ id: id, csrf_token: window.PV_CONFIG.csrfToken })
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            AppToast.show(data.message || 'Item telah dihapus secara permanen.', 'success');
+            if (data.trash_count !== undefined) {
+                updateTrashBadges(data.trash_count);
+            }
+            decryptedTrashItems = decryptedTrashItems.filter(i => i.id !== id);
+            closeModal('detail-modal');
+            renderVaultUI();
+        } catch (err) {
+            AppToast.show('Gagal menghapus permanen: ' + err.message, 'error');
+        }
+    };
+
+    /**
+     * Kosongkan Seluruh Tempat Sampah
+     */
+    const emptyTrashConfirm = async () => {
+        if (!decryptedTrashItems || decryptedTrashItems.length === 0) {
+            AppToast.show('Tempat Sampah sudah kosong.', 'info');
+            return;
+        }
+
+        if (!confirm('Kosongkan semua item di Tempat Sampah secara permanen? Seluruh data yang dihapus akan hilang selamanya dan tidak dapat dipulihkan!')) return;
+
+        try {
+            const res = await fetch(window.PV_CONFIG.routes.emptyTrash, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': window.PV_CONFIG.csrfToken
+                },
+                body: JSON.stringify({ csrf_token: window.PV_CONFIG.csrfToken })
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            AppToast.show(data.message || 'Tempat Sampah berhasil dikosongkan.', 'success');
+            decryptedTrashItems = [];
+            updateTrashBadges(0);
+            renderVaultUI();
+        } catch (err) {
+            AppToast.show('Gagal mengosongkan Tempat Sampah: ' + err.message, 'error');
         }
     };
 
@@ -836,6 +1095,28 @@ const VaultApp = (() => {
     const setFilter = (type) => {
         currentFilterType = type;
         currentFolderId = null;
+
+        const trashBanner = document.getElementById('trash-banner');
+        const headerTitle = document.getElementById('vault-header-title');
+
+        if (type === 'trash') {
+            if (trashBanner) trashBanner.classList.remove('hidden');
+            if (headerTitle) headerTitle.textContent = 'Tempat Sampah';
+        } else {
+            if (trashBanner) trashBanner.classList.add('hidden');
+            if (headerTitle) {
+                const titles = {
+                    'all': 'Semua Item Brankas',
+                    'favorite': 'Item Favorit',
+                    'login': 'Kredensial Logins',
+                    'card': 'Kartu Bank',
+                    'note': 'Catatan Rahasia',
+                    'identity': 'Identitas'
+                };
+                headerTitle.textContent = titles[type] || 'Semua Item Brankas';
+            }
+        }
+
         document.querySelectorAll('.filter-nav-btn').forEach(b => {
             b.classList.remove('bg-blue-50', 'text-blue-700', 'dark:bg-blue-900/30', 'dark:text-blue-400');
         });
@@ -855,7 +1136,11 @@ const VaultApp = (() => {
             activeChip.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
         }
 
-        renderVaultUI();
+        if (type === 'trash') {
+            loadTrashItems();
+        } else {
+            renderVaultUI();
+        }
     };
 
     const setFolder = (id) => {
@@ -1062,6 +1347,12 @@ const VaultApp = (() => {
         setAutoLockMinutes: (mins) => {
             localStorage.setItem('pv_autolock_minutes', mins);
             resetAutoLock();
-        }
+        },
+        restoreItem,
+        destroyItemConfirm,
+        emptyTrashConfirm,
+        loadTrashItems,
+        updateTrashBadges,
+        getDecryptedTrashItems: () => decryptedTrashItems
     };
 })();

@@ -130,6 +130,22 @@ switch ($route) {
         (new ApiVaultController())->deleteItem();
         break;
 
+    case '/api/vault/trash':
+        (new ApiVaultController())->getTrash();
+        break;
+
+    case '/api/vault/restore':
+        (new ApiVaultController())->restoreItem();
+        break;
+
+    case '/api/vault/destroy':
+        (new ApiVaultController())->destroyItem();
+        break;
+
+    case '/api/vault/empty-trash':
+        (new ApiVaultController())->emptyTrash();
+        break;
+
     case '/api/vault/favorite':
         (new ApiVaultController())->toggleFavorite();
         break;

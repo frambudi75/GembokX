@@ -19,11 +19,27 @@ class ApiVaultController {
         $userId = SessionService::userId();
         $items = VaultItem::getAllByUser($userId);
         $folders = Folder::getAllByUser($userId);
+        $trashCount = VaultItem::countTrashByUser($userId);
 
         Router::json([
             'success' => true,
             'items' => $items,
-            'folders' => $folders
+            'folders' => $folders,
+            'trash_count' => $trashCount
+        ]);
+    }
+
+    /**
+     * Mengambil seluruh ciphertext item yang ada di Tempat Sampah
+     */
+    public function getTrash(): void {
+        $userId = SessionService::userId();
+        $items = VaultItem::getTrashByUser($userId);
+
+        Router::json([
+            'success' => true,
+            'items' => $items,
+            'count' => count($items)
         ]);
     }
 
@@ -83,7 +99,7 @@ class ApiVaultController {
     }
 
     /**
-     * Menghapus item dari brankas
+     * Soft delete (Pindahkan item ke Tempat Sampah)
      */
     public function deleteItem(): void {
         $userId = SessionService::userId();
@@ -97,10 +113,79 @@ class ApiVaultController {
 
         $deleted = VaultItem::delete($id, $userId);
         if ($deleted) {
-            Router::json(['success' => true, 'message' => 'Item berhasil dihapus dari brankas.']);
+            Router::json([
+                'success' => true,
+                'message' => 'Item dipindahkan ke Tempat Sampah.',
+                'trash_count' => VaultItem::countTrashByUser($userId)
+            ]);
         } else {
-            Router::json(['success' => false, 'message' => 'Item tidak ditemukan atau gagal dihapus.'], 404);
+            Router::json(['success' => false, 'message' => 'Item tidak ditemukan atau gagal dipindahkan.'], 404);
         }
+    }
+
+    /**
+     * Pulihkan item dari Tempat Sampah
+     */
+    public function restoreItem(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+        $id = (int) ($data['id'] ?? 0);
+
+        if (!$id) {
+            Router::json(['success' => false, 'message' => 'ID item tidak valid.'], 400);
+        }
+
+        $restored = VaultItem::restore($id, $userId);
+        if ($restored) {
+            Router::json([
+                'success' => true,
+                'message' => 'Item berhasil dipulihkan ke brankas.',
+                'trash_count' => VaultItem::countTrashByUser($userId)
+            ]);
+        } else {
+            Router::json(['success' => false, 'message' => 'Item tidak ditemukan di Tempat Sampah.'], 404);
+        }
+    }
+
+    /**
+     * Hapus item secara permanen
+     */
+    public function destroyItem(): void {
+        $userId = SessionService::userId();
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+        $id = (int) ($data['id'] ?? 0);
+
+        if (!$id) {
+            Router::json(['success' => false, 'message' => 'ID item tidak valid.'], 400);
+        }
+
+        $destroyed = VaultItem::destroy($id, $userId);
+        if ($destroyed) {
+            Router::json([
+                'success' => true,
+                'message' => 'Item telah dihapus secara permanen.',
+                'trash_count' => VaultItem::countTrashByUser($userId)
+            ]);
+        } else {
+            Router::json(['success' => false, 'message' => 'Gagal menghapus item permanen.'], 404);
+        }
+    }
+
+    /**
+     * Kosongkan seluruh isi Tempat Sampah
+     */
+    public function emptyTrash(): void {
+        $userId = SessionService::userId();
+        $count = VaultItem::emptyTrash($userId);
+
+        Router::json([
+            'success' => true,
+            'message' => "Tempat Sampah berhasil dikosongkan ({$count} item dihapus).",
+            'count' => $count,
+            'trash_count' => 0
+        ]);
     }
 
     /**

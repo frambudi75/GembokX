@@ -14,7 +14,7 @@
     </div>
 
     <!-- Summary Metrics -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <!-- Total Passwords -->
         <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs">
             <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Total Sandi</span>
@@ -38,9 +38,16 @@
 
         <!-- Pwned / Breached Passwords -->
         <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs">
-            <span class="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider block">Bocor di Dark Web</span>
+            <span class="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider block">Bocor Dark Web</span>
             <div id="audit-breached-pwd" class="text-2xl font-extrabold text-purple-600 dark:text-purple-400 mt-1">-</div>
-            <p class="text-[10px] text-gray-400 mt-0.5">Basis data HaveIBeenPwned</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">HaveIBeenPwned</p>
+        </div>
+
+        <!-- Aged Passwords -->
+        <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xs col-span-2 sm:col-span-1">
+            <span class="text-xs font-semibold text-orange-500 uppercase tracking-wider block">Sandi Usang</span>
+            <div id="audit-aged-pwd" class="text-2xl font-extrabold text-orange-500 mt-1">0</div>
+            <p class="text-[10px] text-gray-400 mt-0.5">&gt; 180 hari tidak diganti</p>
         </div>
     </div>
 
@@ -51,6 +58,7 @@
             <button type="button" onclick="filterAuditList('weak')" id="audit-filter-weak" class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Sandi Lemah</button>
             <button type="button" onclick="filterAuditList('reused')" id="audit-filter-reused" class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Sandi Berulang</button>
             <button type="button" onclick="filterAuditList('breached')" id="audit-filter-breached" class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Bocor di Dark Web</button>
+            <button type="button" onclick="filterAuditList('aged')" id="audit-filter-aged" class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">Sandi Usang (&gt; 6 Bln)</button>
         </div>
 
         <div>
@@ -176,6 +184,8 @@
         auditItemsData = [];
         let weakCount = 0;
         let reusedCount = 0;
+        let agedCount = 0;
+        const now = Date.now();
 
         items.forEach(i => {
             const p = i.data.password;
@@ -183,14 +193,26 @@
             const isWeak = strength.score < 3 || p.length < 12;
             const isReused = pwdFrequency[p] > 1;
 
+            let diffDays = 0;
+            if (i.updated_at) {
+                const updatedDate = new Date(i.updated_at.replace(' ', 'T'));
+                if (!isNaN(updatedDate.getTime())) {
+                    diffDays = Math.floor((now - updatedDate.getTime()) / (1000 * 60 * 60 * 24));
+                }
+            }
+            const isAged = diffDays >= 180; // Lebih dari 6 bulan
+
             if (isWeak) weakCount++;
             if (isReused) reusedCount++;
+            if (isAged) agedCount++;
 
-            if (isWeak || isReused) {
+            if (isWeak || isReused || isAged) {
                 auditItemsData.push({
                     item: i,
                     isWeak: isWeak,
                     isReused: isReused,
+                    isAged: isAged,
+                    ageDays: diffDays,
                     reusedTimes: pwdFrequency[p],
                     breachCount: breachedCache[p] || 0,
                     strength: strength
@@ -200,6 +222,7 @@
 
         document.getElementById('audit-weak-pwd').textContent = weakCount;
         document.getElementById('audit-reused-pwd').textContent = reusedCount;
+        document.getElementById('audit-aged-pwd').textContent = agedCount;
 
         renderAuditItems();
     }
@@ -214,6 +237,8 @@
             filtered = filtered.filter(a => a.isReused);
         } else if (currentAuditFilter === 'breached') {
             filtered = filtered.filter(a => (a.breachCount || 0) > 0);
+        } else if (currentAuditFilter === 'aged') {
+            filtered = filtered.filter(a => a.isAged);
         }
 
         if (filtered.length === 0) {
@@ -242,6 +267,9 @@
             if (a.isReused) {
                 tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300">Digunakan ${a.reusedTimes}x Akun</span>`);
             }
+            if (a.isAged) {
+                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-300">Usang (${a.ageDays} hari lalu)</span>`);
+            }
 
             return `
             <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
@@ -264,7 +292,7 @@
 
     function filterAuditList(type) {
         currentAuditFilter = type;
-        ['all', 'weak', 'reused', 'breached'].forEach(t => {
+        ['all', 'weak', 'reused', 'breached', 'aged'].forEach(t => {
             const btn = document.getElementById(`audit-filter-${t}`);
             if (!btn) return;
             if (t === type) {

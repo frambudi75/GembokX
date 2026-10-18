@@ -123,6 +123,17 @@ class Database {
                 } catch (\Throwable $e) {}
             }
 
+            // Validasi kolom deleted_at pada vault_items untuk Trash / Soft Delete
+            $vaultItemsExist = $pdo->query("SHOW TABLES LIKE 'vault_items'")->fetch();
+            if ($vaultItemsExist) {
+                $itemCols = $pdo->query("SHOW COLUMNS FROM `vault_items`")->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('deleted_at', $itemCols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `vault_items` ADD COLUMN `deleted_at` DATETIME NULL DEFAULT NULL AFTER `updated_at`, ADD INDEX `idx_vault_deleted` (`user_id`, `deleted_at`)");
+                    } catch (\Throwable $e) {}
+                }
+            }
+
             // Pastikan tabel relasional pendukung tersedia
             $pdo->exec("CREATE TABLE IF NOT EXISTS `shared_items` (
                 `id`                INT AUTO_INCREMENT PRIMARY KEY,

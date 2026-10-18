@@ -51,6 +51,14 @@
                         <span>Identitas</span>
                     </div>
                 </button>
+
+                <button type="button" onclick="VaultApp.setFilter('trash')" id="filter-btn-trash" class="filter-nav-btn w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Tempat Sampah</span>
+                    </div>
+                    <span id="trash-count-badge" class="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full">0</span>
+                </button>
             </div>
         </div>
 
@@ -91,6 +99,11 @@
             <button type="button" onclick="VaultApp.setFilter('card')" id="mobile-filter-chip-card" class="mobile-filter-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 whitespace-nowrap">Kartu</button>
             <button type="button" onclick="VaultApp.setFilter('note')" id="mobile-filter-chip-note" class="mobile-filter-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 whitespace-nowrap">Catatan</button>
             <button type="button" onclick="VaultApp.setFilter('identity')" id="mobile-filter-chip-identity" class="mobile-filter-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 whitespace-nowrap">Identitas</button>
+            <button type="button" onclick="VaultApp.setFilter('trash')" id="mobile-filter-chip-trash" class="mobile-filter-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-rose-600 dark:text-rose-400 whitespace-nowrap flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span>Sampah</span>
+                <span id="trash-count-mobile" class="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 rounded-full hidden">0</span>
+            </button>
             <button type="button" onclick="openModal('folder-sheet-modal')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 whitespace-nowrap flex items-center space-x-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                 <span>Folder</span>
@@ -122,6 +135,18 @@
                     <span class="sm:hidden">Tambah</span>
                 </button>
             </div>
+        </div>
+
+        <!-- Trash Mode Action Banner -->
+        <div id="trash-banner" class="hidden p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div class="flex items-center space-x-2.5 text-rose-800 dark:text-rose-200">
+                <svg class="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span><strong>Tempat Sampah:</strong> Item yang dihapus dapat dipulihkan kapan saja atau dimusnahkan permanen.</span>
+            </div>
+            <button type="button" onclick="VaultApp.emptyTrashConfirm()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl transition shadow-2xs self-start sm:self-auto flex items-center space-x-1.5 flex-shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span>Kosongkan Tempat Sampah</span>
+            </button>
         </div>
 
         <!-- Vault Items List -->

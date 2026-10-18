@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS vault_items (
     auth_tag          VARCHAR(64) NOT NULL,
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at        DATETIME NULL DEFAULT NULL,
     CONSTRAINT fk_vault_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_vault_folder FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL,
     INDEX idx_vault_user (user_id),
@@ -62,7 +63,8 @@ CREATE TABLE IF NOT EXISTS vault_items (
     INDEX idx_vault_favorite (user_id, is_favorite),
     INDEX idx_vault_user_folder (user_id, folder_id),
     INDEX idx_vault_user_updated (user_id, updated_at),
-    INDEX idx_vault_user_created (user_id, created_at)
+    INDEX idx_vault_user_created (user_id, created_at),
+    INDEX idx_vault_deleted (user_id, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS activity_logs (
