@@ -6,9 +6,9 @@
     <title><?= $e($title ?? 'GembokX — Password Manager') ?></title>
     <meta name="csrf-token" content="<?= $csrf_token() ?>">
     <!-- Favicon & Touch Icon -->
-    <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
-    <link rel="alternate icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
-    <link rel="apple-touch-icon" href="<?= $url('/assets/img/icon-192.png') ?>">
+    <link rel="icon" type="image/png" sizes="64x64" href="<?= $url('/assets/img/favicon.png?v=2.0') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg?v=2.0') ?>">
+    <link rel="apple-touch-icon" href="<?= $url('/assets/img/icon-192.png?v=2.0') ?>">
     <!-- PWA Web App Manifest & Mobile Meta -->
     <link rel="manifest" href="<?= $url('/manifest.json') ?>">
     <meta name="theme-color" content="#0b0f19">
@@ -97,7 +97,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             <!-- Brand Logo -->
             <a href="<?= $url('/vault') ?>" class="flex items-center space-x-2.5 sm:space-x-3 group min-w-0">
-                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg shadow-xs group-hover:scale-105 transition flex-shrink-0" alt="GembokX">
+                <img src="<?= $url('/assets/img/icon-192.png?v=2.0') ?>" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg shadow-xs group-hover:scale-105 transition flex-shrink-0 object-contain" alt="GembokX">
                 <div class="truncate">
                     <span class="text-base font-bold tracking-tight text-gray-900 dark:text-white flex items-center">
                         GembokX <span class="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 rounded">Zero-Knowledge</span>

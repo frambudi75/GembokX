@@ -3,12 +3,14 @@
  * Zero-Knowledge Safe Offline Caching Strategy
  */
 
-const CACHE_NAME = 'gembokx-static-v1.0';
+const CACHE_NAME = 'gembokx-v2.0';
 
 // Static assets to pre-cache on install
 const PRECACHE_ASSETS = [
     './manifest.json',
+    './assets/img/favicon.png',
     './assets/img/favicon.svg',
+    './assets/img/logo.png',
     './assets/img/logo.svg',
     './assets/img/icon-192.png',
     './assets/img/icon-512.png',

@@ -6,9 +6,9 @@
     <title><?= $e($title ?? 'Masuk — GembokX') ?></title>
     <meta name="csrf-token" content="<?= $csrf_token() ?>">
     <!-- Favicon & Touch Icon -->
-    <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
-    <link rel="alternate icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
-    <link rel="apple-touch-icon" href="<?= $url('/assets/img/icon-192.png') ?>">
+    <link rel="icon" type="image/png" sizes="64x64" href="<?= $url('/assets/img/favicon.png?v=2.0') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg?v=2.0') ?>">
+    <link rel="apple-touch-icon" href="<?= $url('/assets/img/icon-192.png?v=2.0') ?>">
     <!-- PWA Web App Manifest & Mobile Meta -->
     <link rel="manifest" href="<?= $url('/manifest.json') ?>">
     <meta name="theme-color" content="#0b0f19">
@@ -72,7 +72,7 @@
         <!-- Brand Header -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center mb-3">
-                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-12 h-12 rounded-xl shadow-md" alt="GembokX">
+                <img src="<?= $url('/assets/img/icon-192.png?v=2.0') ?>" class="w-16 h-16 rounded-2xl shadow-lg object-contain" alt="GembokX">
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">GembokX</h1>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Zero-Knowledge Encrypted Password Manager</p>
