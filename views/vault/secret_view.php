@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesan Rahasia Terenkripsi — PassVault</title>
+    <title>Pesan Rahasia Terenkripsi — GembokX</title>
     <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

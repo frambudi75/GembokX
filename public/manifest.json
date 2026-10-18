@@ -1,6 +1,6 @@
 {
-  "name": "PassVault — Password Manager",
-  "short_name": "PassVault",
+  "name": "GembokX — Zero-Knowledge Password Manager",
+  "short_name": "GembokX",
   "description": "Zero-Knowledge Encrypted Self-Hosted Password Manager",
   "start_url": "./",
   "scope": "./",

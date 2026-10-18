@@ -1,9 +1,9 @@
 /**
- * PassVault — Service Worker
+ * GembokX — Service Worker
  * Zero-Knowledge Safe Offline Caching Strategy
  */
 
-const CACHE_NAME = 'passvault-static-v1.4';
+const CACHE_NAME = 'gembokx-static-v1.0';
 
 // Static assets to pre-cache on install
 const PRECACHE_ASSETS = [

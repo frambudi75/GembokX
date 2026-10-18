@@ -1,10 +1,10 @@
-# 🔐 PassVault — Enterprise-Grade Zero-Knowledge Password Manager
+# 🔐 GembokX — Enterprise-Grade Zero-Knowledge Password Manager
 
 <div align="center">
 
-![PassVault Logo](public/assets/images/logo.png)
+![GembokX Logo](public/assets/images/logo.png)
 
-**PassVault** adalah aplikasi manajemen kata sandi pribadi (*Personal & Team Password Manager*) mandiri (*self-hosted*) dengan arsitektur **True Zero-Knowledge Client-Side Encryption**, performa tinggi berbasis **Redis Cache & DB Indexing**, dukungan **WebAuthn Biometric Unlock**, **HaveIBeenPwned k-Anonymity**, **Burn-After-Reading Secret Sharing**, **Printable Emergency Kit**, **PWA**, serta **Browser Extension (Manifest V3)**.
+**GembokX** adalah aplikasi manajemen kata sandi pribadi (*Personal & Team Password Manager*) mandiri (*self-hosted*) dengan arsitektur **True Zero-Knowledge Client-Side Encryption**, performa tinggi berbasis **Redis Cache & DB Indexing**, dukungan **WebAuthn Biometric Unlock**, **HaveIBeenPwned k-Anonymity**, **Burn-After-Reading Secret Sharing**, **Printable Emergency Kit**, **PWA**, serta **Browser Extension (Manifest V3)**.
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B%20%7C%208.2-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Database](https://img.shields.io/badge/MariaDB-10.11%2B%20%7C%20MySQL%208.0-003545?logo=mariadb&logoColor=white)](https://mariadb.org)
@@ -35,14 +35,14 @@
 
 ## 🛡️ Arsitektur Kriptografi Zero-Knowledge
 
-Prinsip dasar PassVault adalah: **Server hanyalah media penyimpanan ciphertext buta (*blind storage*)**. Master Password Anda **TIDAK PERNAH** dikirimkan, diproses, atau disimpan di server. Seluruh proses derivasi kunci, enkripsi, dan dekripsi terjadi 100% di browser pengguna melalui **Web Crypto API**.
+Prinsip dasar GembokX adalah: **Server hanyalah media penyimpanan ciphertext buta (*blind storage*)**. Master Password Anda **TIDAK PERNAH** dikirimkan, diproses, atau disimpan di server. Seluruh proses derivasi kunci, enkripsi, dan dekripsi terjadi 100% di browser pengguna melalui **Web Crypto API**.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Pengguna (Browser)
     participant Crypto as Web Crypto API
-    participant Server as PassVault Server (PHP)
+    participant Server as GembokX Server (PHP)
     participant DB as MariaDB / Redis
 
     Note over User,Crypto: Step 1: Derivasi Kunci Klien (PBKDF2 600.000 iterasi)
@@ -94,7 +94,7 @@ sequenceDiagram
 
 ### 5. 🔗 Burn-After-Reading Secrets & Peer Sharing
 - **Burn-After-Reading Links:** Buat tautan berbagi sekali lihat (*one-time view*) dengan batas waktu kadaluarsa (1 jam s/d 7 hari). Kunci dekripsi diletakkan di **URL Hash Fragment (`#key`)** yang menurut standar RFC browser tidak pernah dikirim ke web server.
-- **Peer Sharing:** Bagikan kredensial langsung antar akun pengguna PassVault secara aman.
+- **Peer Sharing:** Bagikan kredensial langsung antar akun pengguna GembokX secara aman.
 
 ### 6. 🖨️ Printable Emergency Kit PDF
 - Lembar pemulihan fisik berstandar perbankan yang dapat dicetak atau disimpan sebagai PDF di menu `/emergency-kit`.
@@ -123,7 +123,7 @@ sequenceDiagram
 
 ## ⚡ Performa: Redis Cache & Database Indexing
 
-PassVault dirancang untuk menangani beban tinggi dengan latensi serendah mungkin:
+GembokX dirancang untuk menangani beban tinggi dengan latensi serendah mungkin:
 
 ### Indeks Database yang Diterapkan:
 | Tabel | Indeks | Kolom | Tujuan Optimasi |
@@ -156,14 +156,14 @@ Request Datang -> SessionService::user()
 
 ## 🔌 Ekstensi Browser Companion (Manifest V3)
 
-PassVault menyertakan ekstensi browser lengkap yang siap dimuat ke **Google Chrome**, **Microsoft Edge**, **Brave**, dan **Opera**:
+GembokX menyertakan ekstensi browser lengkap yang siap dimuat ke **Google Chrome**, **Microsoft Edge**, **Brave**, dan **Opera**:
 
 ### Cara Memasang Ekstensi:
 1. Buka browser Anda dan akses `chrome://extensions/` (atau `edge://extensions/`).
 2. Nyalakan tombol **Developer mode** di pojok kanan atas.
 3. Klik tombol **Load unpacked** (Muat ekstensi yang belum dibongkar).
-4. Pilih folder `extension` di dalam direktori PassVault Anda (`d:\xampp\htdocs\pwd\extension`).
-5. Ekstensi **PassVault Companion** siap digunakan dari toolbar browser!
+4. Pilih folder `extension` di dalam direktori GembokX Anda (`d:\xampp\htdocs\pwd\extension`).
+5. Ekstensi **GembokX Companion** siap digunakan dari toolbar browser!
 
 ---
 
@@ -197,16 +197,16 @@ PassVault menyertakan ekstensi browser lengkap yang siap dimuat ke **Google Chro
 
 ### Opsi 2: Menjalankan dengan Docker Compose
 
-PassVault menyertakan konfigurasi container multi-layanan (**PHP-FPM/Nginx + MariaDB 10.11 + Redis 7**):
+GembokX menyertakan konfigurasi container multi-layanan (**PHP-FPM/Nginx + MariaDB 10.11 + Redis 7**):
 
 ```bash
 # 1. Masuk ke direktori proyek
-cd PassVault
+cd GembokX
 
 # 2. Build dan jalankan seluruh container
 docker-compose up -d --build
 
-# 3. Akses PassVault di browser:
+# 3. Akses GembokX di browser:
 # http://localhost:8080
 ```
 
@@ -215,7 +215,7 @@ docker-compose up -d --build
 ## 📂 Struktur Proyek
 
 ```
-PassVault/
+GembokX/
 ├── .env.example                # Template konfigurasi environment
 ├── .gitignore                  # Aturan pengabaian berkas git
 ├── docker-compose.yml          # Konfigurasi container Web, DB, dan Redis
@@ -249,7 +249,7 @@ PassVault/
 ## ⚙️ Konfigurasi Environment (.env)
 
 ```env
-APP_NAME="PassVault"
+APP_NAME="GembokX"
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost/pwd
@@ -272,7 +272,7 @@ REDIS_ENABLED=true
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=
-REDIS_PREFIX="passvault:"
+REDIS_PREFIX="gembokx:"
 ```
 
 ---

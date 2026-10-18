@@ -56,7 +56,7 @@ class ShareController {
      */
     public function showSecretPage(string $token): void {
         View::render('vault/secret_view', [
-            'title' => 'Pesan Rahasia Terenkripsi — PassVault',
+            'title' => 'Pesan Rahasia Terenkripsi — GembokX',
             'token' => $token
         ], null);
     }

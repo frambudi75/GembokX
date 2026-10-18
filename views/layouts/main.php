@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $e($title ?? 'PassVault — Password Manager') ?></title>
+    <title><?= $e($title ?? 'GembokX — Password Manager') ?></title>
     <meta name="csrf-token" content="<?= $csrf_token() ?>">
     <!-- Favicon & Touch Icon -->
     <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
@@ -15,7 +15,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PassVault">
+    <meta name="apple-mobile-web-app-title" content="GembokX">
     <!-- Tailwind CSS CDN -->
     <script>
         // Saring peringatan produksi CDN agar konsol browser tetap bersih
@@ -97,10 +97,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             <!-- Brand Logo -->
             <a href="<?= $url('/vault') ?>" class="flex items-center space-x-2.5 sm:space-x-3 group min-w-0">
-                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg shadow-xs group-hover:scale-105 transition flex-shrink-0" alt="PassVault">
+                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg shadow-xs group-hover:scale-105 transition flex-shrink-0" alt="GembokX">
                 <div class="truncate">
                     <span class="text-base font-bold tracking-tight text-gray-900 dark:text-white flex items-center">
-                        PassVault <span class="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 rounded">Zero-Knowledge</span>
+                        GembokX <span class="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 rounded">Zero-Knowledge</span>
                     </span>
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-none hidden sm:block">Self-Hosted Password Vault</p>
                 </div>

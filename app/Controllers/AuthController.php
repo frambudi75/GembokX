@@ -14,14 +14,14 @@ class AuthController {
     public function showLogin(): void {
         AuthMiddleware::guestOnly();
         View::render('vault/login', [
-            'title' => 'Masuk ke Brankas — PassVault'
+            'title' => 'Masuk ke Brankas — GembokX'
         ], 'auth');
     }
 
     public function showRegister(): void {
         AuthMiddleware::guestOnly();
         View::render('vault/register', [
-            'title' => 'Buat Akun Brankas Baru — PassVault'
+            'title' => 'Buat Akun Brankas Baru — GembokX'
         ], 'auth');
     }
 

@@ -27,7 +27,7 @@ class AdminUserController {
     public function index(): void {
         $user = User::findById((int) SessionService::userId());
         View::render('vault/users', [
-            'title' => 'Manajemen Pengguna & Anggota — PassVault',
+            'title' => 'Manajemen Pengguna & Anggota — GembokX',
             'user' => $user,
             'vaultKey' => [
                 'encrypted' => $user['encrypted_vault_key'] ?? '',

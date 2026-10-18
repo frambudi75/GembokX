@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembar Pemulihan Darurat (Emergency Kit) — PassVault</title>
+    <title>Lembar Pemulihan Darurat (Emergency Kit) — GembokX</title>
     <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
                 <div class="flex items-center space-x-3">
                     <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-10 h-10 rounded-xl" alt="Logo">
                     <div>
-                        <h1 class="text-2xl font-black tracking-tight text-gray-950 uppercase">PASSVAULT EMERGENCY KIT</h1>
+                        <h1 class="text-2xl font-black tracking-tight text-gray-950 uppercase">GEMBOKX EMERGENCY KIT</h1>
                         <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Dokumen Pemulihan Rahasia &amp; Keamanan Akun</p>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
 
         <!-- Warning Callout -->
         <div class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl text-amber-900 text-xs leading-relaxed">
-            <strong>Penting:</strong> Dokumen ini berisi informasi pemulihan akun PassVault Anda. Karena brankas menggunakan arsitektur <em>Zero-Knowledge</em>, administrator dan server tidak memiliki salinan Master Password Anda. Simpan lembar fisik ini di tempat aman (misal: brankas dokumen atau map terkunci).
+            <strong>Penting:</strong> Dokumen ini berisi informasi pemulihan akun GembokX Anda. Karena brankas menggunakan arsitektur <em>Zero-Knowledge</em>, administrator dan server tidak memiliki salinan Master Password Anda. Simpan lembar fisik ini di tempat aman (misal: brankas dokumen atau map terkunci).
         </div>
 
         <!-- Credential Details Grid -->

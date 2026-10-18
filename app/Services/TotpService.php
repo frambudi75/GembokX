@@ -58,7 +58,7 @@ class TotpService {
     /**
      * Buat URL otpauth:// untuk pemindaian aplikasi Google Authenticator / Authy
      */
-    public static function getOtpAuthUrl(string $label, string $secret, string $issuer = 'PassVault'): string {
+    public static function getOtpAuthUrl(string $label, string $secret, string $issuer = 'GembokX'): string {
         $encodedLabel = rawurlencode($label);
         $encodedIssuer = rawurlencode($issuer);
         return "otpauth://totp/{$encodedIssuer}:{$encodedLabel}?secret={$secret}&issuer={$encodedIssuer}&algorithm=SHA1&digits=6&period=30";

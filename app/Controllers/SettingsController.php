@@ -19,7 +19,7 @@ class SettingsController {
     public function setup2fa(): void {
         $user = User::findById(SessionService::userId());
         $secret = TotpService::generateSecret(16);
-        $otpUrl = TotpService::getOtpAuthUrl($user['email'], $secret, 'PassVault');
+        $otpUrl = TotpService::getOtpAuthUrl($user['email'], $secret, 'GembokX');
 
         Router::json([
             'success' => true,

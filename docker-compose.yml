@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: passvault_web
+    container_name: gembokx_web
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -22,7 +22,7 @@ services:
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
-      REDIS_PREFIX: "passvault:"
+      REDIS_PREFIX: "gembokx:"
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: passvault_redis
+    container_name: gembokx_redis
     restart: unless-stopped
     ports:
       - "6379:6379"

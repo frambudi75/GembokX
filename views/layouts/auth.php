@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $e($title ?? 'Masuk — PassVault') ?></title>
+    <title><?= $e($title ?? 'Masuk — GembokX') ?></title>
     <meta name="csrf-token" content="<?= $csrf_token() ?>">
     <!-- Favicon & Touch Icon -->
     <link rel="icon" type="image/svg+xml" href="<?= $url('/assets/img/favicon.svg') ?>">
@@ -15,7 +15,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PassVault">
+    <meta name="apple-mobile-web-app-title" content="GembokX">
     <!-- Tailwind CSS CDN -->
     <script>
         (function() {
@@ -72,9 +72,9 @@
         <!-- Brand Header -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center mb-3">
-                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-12 h-12 rounded-xl shadow-md" alt="PassVault">
+                <img src="<?= $url('/assets/img/favicon.svg') ?>" class="w-12 h-12 rounded-xl shadow-md" alt="GembokX">
             </div>
-            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">PassVault</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">GembokX</h1>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Zero-Knowledge Encrypted Password Manager</p>
         </div>
 

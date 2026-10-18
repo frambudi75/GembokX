@@ -25,7 +25,7 @@ class ExportController {
 
         $backup = [
             'encrypted' => true,
-            'app' => 'PassVault',
+            'app' => 'GembokX',
             'version' => '1.0',
             'exported_at' => date('c'),
             'folders' => $folders,
@@ -33,7 +33,7 @@ class ExportController {
         ];
 
         header('Content-Type: application/json');
-        header('Content-Disposition: attachment; filename="passvault_encrypted_backup_' . date('Y-m-d_His') . '.json"');
+        header('Content-Disposition: attachment; filename="gembokx_encrypted_backup_' . date('Y-m-d_His') . '.json"');
         echo json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
     }

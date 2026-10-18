@@ -13,7 +13,7 @@ class VaultController {
         $user = User::findById(SessionService::userId());
 
         View::render('vault/index', [
-            'title' => 'Brankas Saya — PassVault',
+            'title' => 'Brankas Saya — GembokX',
             'user' => $user,
             'vaultKey' => [
                 'encrypted' => $user['encrypted_vault_key'],
@@ -29,7 +29,7 @@ class VaultController {
         $user = User::findById(SessionService::userId());
 
         View::render('vault/audit', [
-            'title' => 'Audit Keamanan Sandi — PassVault',
+            'title' => 'Audit Keamanan Sandi — GembokX',
             'user' => $user,
             'vaultKey' => [
                 'encrypted' => $user['encrypted_vault_key'],
@@ -46,7 +46,7 @@ class VaultController {
         $folders = Folder::getAllByUser($user['id']);
 
         View::render('vault/settings', [
-            'title' => 'Pengaturan Akun & Keamanan — PassVault',
+            'title' => 'Pengaturan Akun & Keamanan — GembokX',
             'user' => $user,
             'folders' => $folders,
             'vaultKey' => [
@@ -63,7 +63,7 @@ class VaultController {
         $user = User::findById((int) SessionService::userId());
 
         View::render('vault/emergency_kit', [
-            'title' => 'Lembar Pemulihan Darurat (Emergency Kit) — PassVault',
+            'title' => 'Lembar Pemulihan Darurat (Emergency Kit) — GembokX',
             'user' => $user
         ], null);
     }

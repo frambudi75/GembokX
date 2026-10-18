@@ -447,7 +447,7 @@
     function copyCreatedCredentials() {
         const email = document.getElementById('created-info-email').textContent;
         const pass = document.getElementById('created-info-pass').textContent;
-        const text = `Akun PassVault Anda:\nEmail: ${email}\nMaster Password: ${pass}\nURL: ${window.location.origin + window.PV_CONFIG.baseUrl}\n\nCatatan: Segera ubah Master Password setelah login pertama kali.`;
+        const text = `Akun GembokX Anda:\nEmail: ${email}\nMaster Password: ${pass}\nURL: ${window.location.origin + window.PV_CONFIG.baseUrl}\n\nCatatan: Segera ubah Master Password setelah login pertama kali.`;
         VaultApp.copyToClipboard(text, 'Kredensial disalin ke clipboard!');
     }
 
