@@ -239,8 +239,8 @@
     </nav>
 
     <!-- Core Scripts (Load first so partials and components can use them) -->
-    <script src="<?= $url('/assets/js/argon2.umd.min.js') ?>"></script>
-    <script src="<?= $url('/assets/js/crypto.js') ?>"></script>
+    <script src="<?= $url('/assets/js/argon2.umd.min.js?v=2.2') ?>"></script>
+    <script src="<?= $url('/assets/js/crypto.js?v=2.2') ?>"></script>
     <script src="<?= $url('/assets/js/generator.js') ?>"></script>
     <script src="<?= $url('/assets/js/biometrics.js') ?>"></script>
     <script src="<?= $url('/assets/js/app.js?v=1.4') ?>"></script>
