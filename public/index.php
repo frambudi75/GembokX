@@ -34,6 +34,7 @@ use App\Controllers\ApiVaultController;
 use App\Controllers\SettingsController;
 use App\Controllers\ExportController;
 use App\Controllers\AdminUserController;
+use App\Controllers\ShareController;
 
 // Inisialisasi Environment & Keamanan
 App::boot();
@@ -42,6 +43,10 @@ SessionService::start();
 
 // Validasi Token CSRF pada HTTP Method non-GET
 CsrfMiddleware::verify();
+
+// Dapatkan rute dan HTTP method saat ini
+$route = Router::getRoute();
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Dynamic Routes (Burn-After-Reading Secret Links)
 if (str_starts_with($route, '/secret/')) {
