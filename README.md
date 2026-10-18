@@ -6,7 +6,6 @@
 
 **GembokX** adalah aplikasi manajemen kata sandi pribadi (*Personal & Team Password Manager*) mandiri (*self-hosted*) dengan arsitektur **True Zero-Knowledge Client-Side Encryption**, performa tinggi berbasis **Redis Cache & DB Indexing**, dukungan **WebAuthn Biometric Unlock**, **HaveIBeenPwned k-Anonymity**, **Burn-After-Reading Secret Sharing**, **Printable Emergency Kit**, **PWA**, serta **Browser Extension (Manifest V3)**.
 
-[![CI/CD Pipeline](https://github.com/frambudi75/GembokX/actions/workflows/ci.yml/badge.svg)](https://github.com/frambudi75/GembokX/actions/workflows/ci.yml)
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B%20%7C%208.2-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Database](https://img.shields.io/badge/MariaDB-10.11%2B%20%7C%20MySQL%208.0-003545?logo=mariadb&logoColor=white)](https://mariadb.org)
 [![Redis](https://img.shields.io/badge/Redis-Cache%20%26%20RESP-DC382D?logo=redis&logoColor=white)](https://redis.io)
