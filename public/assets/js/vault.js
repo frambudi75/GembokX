@@ -24,17 +24,29 @@ const VaultApp = (() => {
                 clean = 'https://' + clean;
             }
             const u = new URL(clean);
-            return u.hostname.replace(/^www\./, '');
+            const host = u.hostname.replace(/^www\./, '').toLowerCase();
+            // Validasi format domain publik: harus memiliki minimal 1 titik dan TLD valid minimal 2 karakter
+            // Mencegah request 404 ke kata seperti 'tes', 'ssh', 'localhost'
+            if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/.test(host)) {
+                return host;
+            }
+            return '';
         } catch (e) {
-            const match = urlStr.match(/([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/);
-            return match ? match[1] : '';
+            return '';
         }
     };
 
-    const getMonogramBadge = (name) => {
+    const getMonogramData = (name) => {
         const clean = (name || 'V').trim();
-        const words = clean.split(/\s+/);
-        const letters = words.length > 1 ? (words[0][0] + words[1][0]) : clean.slice(0, 2);
+        const words = clean.split(/\s+/).filter(Boolean);
+        let letters = 'V';
+        if (words.length > 1 && words[0] && words[1]) {
+            letters = words[0].charAt(0) + words[1].charAt(0);
+        } else if (clean.length > 0) {
+            letters = clean.slice(0, 2);
+        }
+        letters = letters.toUpperCase();
+
         const colors = [
             'bg-blue-600 text-white',
             'bg-emerald-600 text-white',
@@ -47,13 +59,7 @@ const VaultApp = (() => {
         let hash = 0;
         for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
         const colorClass = colors[Math.abs(hash) % colors.length];
-        return `<div class="w-9 h-9 rounded-xl ${colorClass} font-bold text-xs flex items-center justify-center uppercase tracking-wider shadow-xs flex-shrink-0">${escapeHtml(letters.toUpperCase())}</div>`;
-    };
-
-    const getMonogramSmall = (name) => {
-        const clean = (name || 'V').trim();
-        const letter = clean.charAt(0) || 'V';
-        return `<div class="w-5 h-5 rounded-md bg-blue-600/20 text-blue-500 font-bold text-[9px] flex items-center justify-center uppercase flex-shrink-0">${escapeHtml(letter.toUpperCase())}</div>`;
+        return { letters, colorClass, singleLetter: letters.charAt(0) || 'V' };
     };
 
     /**
@@ -264,28 +270,48 @@ const VaultApp = (() => {
             let iconSmall = '';
 
             if (item.item_type === 'login') {
+                const mono = getMonogramData(d.name);
                 if (domain) {
                     iconHtml = `
-                    <div class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-700/80 p-1.5 flex items-center justify-center flex-shrink-0 shadow-2xs border border-gray-200/60 dark:border-gray-600/40">
+                    <div class="w-10 h-10 rounded-xl relative overflow-hidden flex-shrink-0 shadow-2xs border border-gray-200/80 dark:border-gray-700/80 flex items-center justify-center">
+                        <div class="w-full h-full ${mono.colorClass} font-bold text-xs flex items-center justify-center uppercase tracking-wider select-none">
+                            ${escapeHtml(mono.letters)}
+                        </div>
                         <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64" 
-                             class="w-6 h-6 rounded object-contain" 
+                             class="absolute inset-0 w-full h-full p-2 object-contain bg-white dark:bg-gray-800" 
                              alt="" 
                              loading="lazy" 
-                             onerror="this.onerror=null; this.parentElement.outerHTML='${getMonogramBadge(d.name)}';" />
+                             onerror="this.remove();" />
                     </div>`;
-                    iconSmall = `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" class="w-4 h-4 rounded object-contain" alt="" onerror="this.onerror=null; this.parentElement.innerHTML='${getMonogramSmall(d.name)}';" />`;
+                    iconSmall = `
+                    <div class="w-5 h-5 rounded relative overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        <div class="w-full h-full bg-blue-600/20 text-blue-500 font-bold text-[9px] flex items-center justify-center uppercase">
+                            ${escapeHtml(mono.singleLetter)}
+                        </div>
+                        <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" 
+                             class="absolute inset-0 w-full h-full object-contain bg-white dark:bg-gray-800" 
+                             alt="" 
+                             loading="lazy" 
+                             onerror="this.remove();" />
+                    </div>`;
                 } else {
-                    iconHtml = getMonogramBadge(d.name);
-                    iconSmall = getMonogramSmall(d.name);
+                    iconHtml = `
+                    <div class="w-10 h-10 rounded-xl ${mono.colorClass} font-bold text-xs flex items-center justify-center uppercase tracking-wider shadow-2xs border border-gray-200/80 dark:border-gray-700/80 flex-shrink-0 select-none">
+                        ${escapeHtml(mono.letters)}
+                    </div>`;
+                    iconSmall = `
+                    <div class="w-5 h-5 rounded bg-blue-600/20 text-blue-500 font-bold text-[9px] flex items-center justify-center uppercase flex-shrink-0">
+                        ${escapeHtml(mono.singleLetter)}
+                    </div>`;
                 }
             } else if (item.item_type === 'card') {
-                iconHtml = `<div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-emerald-100 dark:border-emerald-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>`;
+                iconHtml = `<div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-emerald-100 dark:border-emerald-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>`;
                 iconSmall = `<div class="w-4 h-4 text-emerald-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>`;
             } else if (item.item_type === 'note') {
-                iconHtml = `<div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-amber-100 dark:border-amber-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>`;
+                iconHtml = `<div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-amber-100 dark:border-amber-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>`;
                 iconSmall = `<div class="w-4 h-4 text-amber-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>`;
             } else {
-                iconHtml = `<div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-purple-100 dark:border-purple-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>`;
+                iconHtml = `<div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 p-2 flex items-center justify-center flex-shrink-0 shadow-2xs border border-purple-100 dark:border-purple-900/40"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>`;
                 iconSmall = `<div class="w-4 h-4 text-purple-500 flex items-center justify-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>`;
             }
 
