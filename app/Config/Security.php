@@ -20,15 +20,15 @@ class Security {
             header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
         }
 
-        // Content Security Policy (dukung Tailwind CSS CDN, Service Worker, Manifest, Web Crypto)
+        // Content Security Policy (dukung Tailwind CSS CDN, Service Worker, Manifest, Web Crypto, WebAssembly, HIBP)
         $csp = "default-src 'self'; "
-             . "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
-             . "worker-src 'self'; "
+             . "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://cdn.tailwindcss.com; "
+             . "worker-src 'self' blob:; "
              . "manifest-src 'self'; "
              . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
              . "font-src 'self' https://fonts.gstatic.com data:; "
              . "img-src 'self' data: https:; "
-             . "connect-src 'self'; "
+             . "connect-src 'self' https://api.pwnedpasswords.com https:; "
              . "frame-ancestors 'none'; "
              . "base-uri 'self'; "
              . "form-action 'self';";
