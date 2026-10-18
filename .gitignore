@@ -25,3 +25,17 @@ Desktop.ini
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# AI Agent & Internal Skill Configuration
+/.agents/
+/AGENTS.md
+
+# Database Exports & Backups (Preserve initial schema & seed)
+*.sql
+!schema.sql
+!seed.php
+
+# Local SSL Certificates & Private Keys
+*.pem
+*.key
+*.crt

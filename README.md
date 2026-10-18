@@ -207,7 +207,7 @@ cd GembokX
 docker-compose up -d --build
 
 # 3. Akses GembokX di browser:
-# http://localhost:8080
+# http://localhost:2035
 ```
 
 ---
