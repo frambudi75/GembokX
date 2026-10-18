@@ -3,7 +3,7 @@
  * Zero-Knowledge Safe Offline Caching Strategy
  */
 
-const CACHE_NAME = 'gembokx-v2.0';
+const CACHE_NAME = 'gembokx-v2.3';
 
 // Static assets to pre-cache on install
 const PRECACHE_ASSETS = [
