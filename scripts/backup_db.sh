@@ -7,13 +7,20 @@
 
 set -e
 
-BACKUP_DIR="/var/www/html/storage/backups"
+# Auto-detect base directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -d "/var/www/html/storage" ]; then
+    BACKUP_DIR="/var/www/html/storage/backups"
+else
+    BACKUP_DIR="${SCRIPT_DIR}/storage/backups"
+fi
+
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 FILENAME="gembokx_db_${TIMESTAMP}.sql.gz"
 TARGET_FILE="${BACKUP_DIR}/${FILENAME}"
 
 mkdir -p "$BACKUP_DIR"
-chmod 777 "$BACKUP_DIR" || true
+chmod 777 "$BACKUP_DIR" 2>/dev/null || true
 
 DB_HOST="${DB_HOST:-db}"
 DB_USER="${DB_USER:-passvault_user}"
@@ -22,13 +29,18 @@ DB_NAME="${DB_NAME:-passvault_db}"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting GembokX database backup..."
 
-if command -v mysqldump >/dev/null 2>&1; then
-    mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$TARGET_FILE"
-elif command -v mariadb-dump >/dev/null 2>&1; then
-    mariadb-dump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$TARGET_FILE"
-else
-    echo "[!] mysqldump or mariadb-dump not found in web container. Dumping via docker exec..."
+if command -v docker >/dev/null 2>&1; then
+    echo "[*] Dumping via Docker container gembokx_db..."
     docker exec gembokx_db mariadb-dump -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$TARGET_FILE"
+elif command -v mariadb-dump >/dev/null 2>&1; then
+    echo "[*] Dumping via mariadb-dump..."
+    mariadb-dump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$TARGET_FILE"
+elif command -v mysqldump >/dev/null 2>&1; then
+    echo "[*] Dumping via mysqldump..."
+    mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$TARGET_FILE"
+else
+    echo "[!] Error: Neither docker nor mariadb-dump/mysqldump found."
+    exit 1
 fi
 
 chmod 644 "$TARGET_FILE"
