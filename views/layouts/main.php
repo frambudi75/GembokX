@@ -135,11 +135,11 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </button>
 
-                <!-- Admin User Manager Link (Desktop) -->
+                <!-- Admin User Manager Link -->
                 <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                <a href="<?= $url('/admin/users') ?>" class="hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-900/50 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition" title="Kelola Anggota / Teman">
+                <a href="<?= $url('/admin/users') ?>" class="inline-flex items-center space-x-1.5 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-900/50 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition" title="Kelola Anggota / Pengguna">
                     <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <span>Pengguna</span>
+                    <span class="hidden sm:inline">Pengguna</span>
                 </a>
                 <?php endif; ?>
 
@@ -166,9 +166,9 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 </button>
 
-                <!-- User Dropdown / Menu (Avatar) -->
-                <div class="relative group">
-                    <a href="<?= $url('/settings') ?>" class="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition" title="Pengaturan & Profil (<?= $e($user['username'] ?? '') ?>)">
+                <!-- User Dropdown / Menu Trigger (Avatar) -->
+                <div class="relative">
+                    <button type="button" onclick="openModal('user-menu-sheet')" class="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer" title="Menu Pengguna & Profil (<?= $e($user['username'] ?? '') ?>)">
                         <?php if (!empty($user['avatar'])): ?>
                             <img src="<?= $url($e($user['avatar'])) ?>" class="w-8 h-8 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shadow-2xs" alt="Avatar">
                         <?php else: ?>
@@ -176,7 +176,7 @@
                                 <?= substr($e($user['username'] ?? 'U'), 0, 1) ?>
                             </div>
                         <?php endif; ?>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Logout (Desktop) -->
@@ -234,11 +234,11 @@
                 <span class="text-[10px] font-medium mt-1">Generator</span>
             </button>
 
-            <!-- 5. Settings / Menu -->
-            <a href="<?= $url('/settings') ?>" class="flex flex-col items-center justify-center py-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <!-- 5. Settings / User Menu -->
+            <button type="button" onclick="openModal('user-menu-sheet')" class="flex flex-col items-center justify-center py-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition min-h-[44px]" title="Buka Menu Pengguna">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 <span class="text-[10px] font-medium mt-1">Menu</span>
-            </a>
+            </button>
         </div>
     </nav>
 
@@ -258,6 +258,7 @@
     <?php include dirname(__DIR__) . '/partials/modal_generator.php'; ?>
     <?php include dirname(__DIR__) . '/partials/modal_folder.php'; ?>
     <?php include dirname(__DIR__) . '/partials/modal_folder_sheet.php'; ?>
+    <?php include dirname(__DIR__) . '/partials/modal_user_menu.php'; ?>
 
     <!-- Service Worker Registration & PWA Install Listener -->
     <script>
