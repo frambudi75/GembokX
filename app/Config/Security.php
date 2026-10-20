@@ -11,6 +11,8 @@ class Security {
         header("X-Frame-Options: DENY");
         // Anti-MIME sniffing
         header("X-Content-Type-Options: nosniff");
+        // Anti-Flash/PDF cross domain policy abuse
+        header("X-Permitted-Cross-Domain-Policies: none");
         // Referrer Policy
         header("Referrer-Policy: strict-origin-when-cross-origin");
         // Batasi akses sensor/hardware
@@ -34,6 +36,45 @@ class Security {
              . "form-action 'self';";
         
         header("Content-Security-Policy: " . $csp);
+    }
+
+    private static function getAppKey(): string {
+        $key = App::env('APP_KEY');
+        if (empty($key)) {
+            $key = 'gembokx_default_server_secret_fallback_key_2026';
+        }
+        return hash('sha256', (string) $key, true);
+    }
+
+    /**
+     * Enkripsi data sensitif server-side menggunakan AES-256-GCM
+     */
+    public static function encrypt(string $plaintext): string {
+        $key = self::getAppKey();
+        $iv = random_bytes(12);
+        $tag = '';
+        $ciphertext = openssl_encrypt($plaintext, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, '', 16);
+        return 'gcm:' . base64_encode($iv) . ':' . base64_encode($tag) . ':' . base64_encode($ciphertext);
+    }
+
+    /**
+     * Dekripsi data sensitif server-side
+     */
+    public static function decrypt(string $payload): ?string {
+        if (!str_starts_with($payload, 'gcm:')) {
+            return $payload; // Kembalikan nilai langsung jika data lama belum terenkripsi
+        }
+        $parts = explode(':', substr($payload, 4));
+        if (count($parts) !== 3) {
+            return null;
+        }
+        [$b64Iv, $b64Tag, $b64Cipher] = $parts;
+        $iv = base64_decode($b64Iv);
+        $tag = base64_decode($b64Tag);
+        $ciphertext = base64_decode($b64Cipher);
+        $key = self::getAppKey();
+        $decrypted = openssl_decrypt($ciphertext, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+        return $decrypted !== false ? $decrypted : null;
     }
 
     public static function generateCsrfToken(): string {

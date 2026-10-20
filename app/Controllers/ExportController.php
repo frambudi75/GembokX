@@ -18,6 +18,15 @@ class ExportController {
      */
     public function export(): void {
         $userId = SessionService::userId();
+        $rateKey = 'export_rate_user_' . $userId;
+        $recent = (int) \App\Services\CacheService::get($rateKey, 0);
+        if ($recent >= 3) {
+            http_response_code(429);
+            echo "Terlalu sering melakukan ekspor brankas. Harap tunggu 2 menit sebelum mencoba lagi.";
+            exit;
+        }
+        \App\Services\CacheService::set($rateKey, $recent + 1, 120);
+
         $items = VaultItem::getAllByUser($userId);
         $folders = Folder::getAllByUser($userId);
 

@@ -4,6 +4,19 @@ Semua pembaruan dan catatan rilis PassVault dicatat secara kronologis dalam doku
 
 ---
 
+## [v2.3.0] - 2026-10-20
+### 🛡️ Critical Security Hardening & Anti-Exploit Infrastructure
+- **Server-Side AES-256-GCM TOTP Encryption:** Secret key 2FA kini dienkripsi secara simetris menggunakan AES-256-GCM dengan kunci master server `APP_KEY`, mencegah kebocoran 2FA jika database terekspos.
+- **Session Fingerprinting:** Proteksi pembajakan sesi (session hijacking) dan pencurian cookie dengan memvalidasi sidik jari kombinasi User-Agent dan Subnet IP klien pada setiap request aktif.
+- **Docker Compose Credentials Hardening:** Memindahkan seluruh kredensial database hardcoded ke variabel lingkungan `.env` dengan dukungan `env_file`.
+- **Redis Network Isolation:** Menutup publikasi port Redis `6379` ke host/internet, mengisolasi cache hanya di dalam internal network container Docker.
+- **Strict File Permissions:** Memperketat izin direktori runtime dari `chmod 777` menjadi `755` (uploads) dan `750` (storage).
+- **IP Rate Limiting & Cooldowns:** Menambahkan throttling berbasis IP pada endpoint `/api/prelogin` (maksimal 30 req/menit) dan cooldown ekspor brankas untuk mencegah brute-force dan data scraping.
+- **Bcrypt Cost 12:** Meningkatkan cost hashing kata sandi dan recovery key ke 12 untuk ketahanan komputasi jangka panjang.
+- **Clean Error & Security Headers:** Menghapus refleksi parameter rute pada halaman 404 (anti reflected XSS) dan menambahkan header `X-Permitted-Cross-Domain-Policies: none`.
+
+---
+
 ## [v2.2.0] - 2026-10-18
 ### ⚡ Redis Caching Engine & Database Performance Indexing
 - **Redis Cache Integration:** Menambahkan `App\Services\CacheService` dengan dukungan otomatis:

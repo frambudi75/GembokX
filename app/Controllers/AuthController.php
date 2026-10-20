@@ -29,6 +29,10 @@ class AuthController {
      * Ini langkah Zero-Knowledge krusial agar client dapat mendriver Master Key secara lokal.
      */
     public function prelogin(): void {
+        if (!RateLimiter::checkIpRate('prelogin', 30, 60)) {
+            Router::json(['success' => false, 'message' => 'Terlalu banyak permintaan prelogin dari IP Anda. Silakan tunggu 1 menit.'], 429);
+        }
+
         $raw = file_get_contents('php://input');
         $data = json_decode($raw, true) ?: $_POST;
         $email = strtolower(trim($data['email'] ?? ''));

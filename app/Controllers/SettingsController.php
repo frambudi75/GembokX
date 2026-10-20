@@ -163,10 +163,10 @@ class SettingsController {
 
         $targetDir = dirname(__DIR__, 2) . '/public/uploads/avatars';
         if (!is_dir($targetDir)) {
-            @mkdir($targetDir, 0777, true);
+            @mkdir($targetDir, 0755, true);
         }
         if (!is_writable($targetDir)) {
-            @chmod($targetDir, 0777);
+            @chmod($targetDir, 0755);
         }
 
         // Hapus foto profil lama pengguna jika ada untuk menghemat ruang disk
@@ -177,7 +177,7 @@ class SettingsController {
             }
         }
 
-        $filename = 'avatar_' . $userId . '_' . bin2hex(random_bytes(6)) . '.webp';
+        $filename = 'avatar_' . $userId . '_' . bin2hex(random_bytes(16)) . '.webp';
         $targetPath = $targetDir . '/' . $filename;
         $compressed = false;
 

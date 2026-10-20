@@ -64,4 +64,20 @@ class RateLimiter {
             // Abaikan
         }
     }
+
+    /**
+     * Rate limiting berbasis IP menggunakan CacheService (Redis / File fallback)
+     */
+    public static function checkIpRate(string $action, int $maxAttempts = 30, int $decaySeconds = 60): bool {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $key = 'rate_' . $action . '_' . md5($ip);
+        $current = (int) \App\Services\CacheService::get($key, 0);
+
+        if ($current >= $maxAttempts) {
+            return false;
+        }
+
+        \App\Services\CacheService::set($key, $current + 1, $decaySeconds);
+        return true;
+    }
 }

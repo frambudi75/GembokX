@@ -247,11 +247,11 @@ switch ($route) {
     default:
         // Cek jika API
         if (str_starts_with($route, '/api/')) {
-            Router::json(['success' => false, 'message' => 'Endpoint tidak ditemukan: ' . $route], 404);
+            Router::json(['success' => false, 'message' => 'Endpoint tidak ditemukan.'], 404);
         }
 
         // Tampilkan 404
         http_response_code(404);
-        echo "<div style='font-family:sans-serif;text-align:center;padding:50px;'><h1>404 — Halaman Tidak Ditemukan</h1><p>Rute: " . htmlspecialchars($route) . "</p><p><a href='" . Router::url('/') . "'>Kembali ke Brankas</a></p></div>";
+        echo "<div style='font-family:sans-serif;text-align:center;padding:50px;'><h1>404 — Halaman Tidak Ditemukan</h1><p>Halaman yang Anda minta tidak tersedia atau telah dipindahkan.</p><p><a href='" . Router::url('/') . "'>Kembali ke Brankas</a></p></div>";
         exit;
 }

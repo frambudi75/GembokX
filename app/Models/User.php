@@ -10,6 +10,9 @@ class User {
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
         $stmt->execute([strtolower(trim($email))]);
         $row = $stmt->fetch();
+        if ($row && !empty($row['totp_secret'])) {
+            $row['totp_secret'] = \App\Config\Security::decrypt($row['totp_secret']);
+        }
         return $row ?: null;
     }
 
@@ -18,6 +21,9 @@ class User {
         $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$id]);
         $row = $stmt->fetch();
+        if ($row && !empty($row['totp_secret'])) {
+            $row['totp_secret'] = \App\Config\Security::decrypt($row['totp_secret']);
+        }
         return $row ?: null;
     }
 
@@ -58,7 +64,7 @@ class User {
             'avatar' => !empty($data['avatar']) ? trim($data['avatar']) : null,
             'phone' => !empty($data['phone']) ? trim($data['phone']) : null,
             'is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
-            'auth_hash' => password_hash($data['auth_key'], PASSWORD_BCRYPT),
+            'auth_hash' => password_hash($data['auth_key'], PASSWORD_BCRYPT, ['cost' => 12]),
             'kdf_salt' => $data['kdf_salt'],
             'kdf_iterations' => (int) ($data['kdf_iterations'] ?? 600000),
             'kdf_algorithm' => $data['kdf_algorithm'] ?? 'pbkdf2',
@@ -66,7 +72,7 @@ class User {
             'kdf_parallelism' => (int) ($data['kdf_parallelism'] ?? 4),
             'encrypted_vault_key' => $data['encrypted_vault_key'],
             'vault_key_iv' => $data['vault_key_iv'],
-            'recovery_code_hash' => password_hash($data['recovery_code'], PASSWORD_BCRYPT)
+            'recovery_code_hash' => password_hash($data['recovery_code'], PASSWORD_BCRYPT, ['cost' => 12])
         ]);
 
         return (int) $pdo->lastInsertId();
@@ -125,7 +131,7 @@ class User {
         ");
 
         return $stmt->execute([
-            'auth_hash' => password_hash($authKey, PASSWORD_BCRYPT),
+            'auth_hash' => password_hash($authKey, PASSWORD_BCRYPT, ['cost' => 12]),
             'encrypted_vault_key' => $encryptedVaultKey,
             'vault_key_iv' => $vaultKeyIv,
             'id' => $id
@@ -134,8 +140,9 @@ class User {
 
     public static function enable2fa(int $id, string $secret): bool {
         $pdo = Database::getConnection();
+        $encryptedSecret = \App\Config\Security::encrypt($secret);
         $stmt = $pdo->prepare("UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE id = ?");
-        return $stmt->execute([$secret, $id]);
+        return $stmt->execute([$encryptedSecret, $id]);
     }
 
     public static function disable2fa(int $id): bool {
@@ -170,7 +177,7 @@ class User {
         ");
 
         return $stmt->execute([
-            'auth_hash' => password_hash($authKey, PASSWORD_BCRYPT),
+            'auth_hash' => password_hash($authKey, PASSWORD_BCRYPT, ['cost' => 12]),
             'encrypted_vault_key' => $encryptedVaultKey,
             'vault_key_iv' => $vaultKeyIv,
             'kdf_algorithm' => $kdfAlgorithm,

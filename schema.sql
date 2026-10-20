@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `kdf_parallelism`       INT NOT NULL DEFAULT 4,           -- Derajat paralelisme thread Argon2id
     `encrypted_vault_key`   TEXT NOT NULL,                    -- Kunci simetris brankas yang dienkripsi oleh Master Key
     `vault_key_iv`          VARCHAR(64) NOT NULL,             -- IV untuk dekripsi kunci brankas
-    `totp_secret`           VARCHAR(64) NULL,                 -- Secret key 2FA TOTP (opsional)
+    `totp_secret`           TEXT NULL,                        -- Secret key 2FA TOTP (terenkripsi AES-256-GCM)
     `totp_enabled`          TINYINT(1) NOT NULL DEFAULT 0,    -- Status aktif 2FA (0/1)
     `recovery_code_hash`    VARCHAR(255) NOT NULL,            -- Hash bcrypt dari emergency recovery key
     `discord_webhook_url`   VARCHAR(255) NULL,                -- Webhook URL Discord untuk notifikasi keamanan instan

@@ -31,8 +31,36 @@ class SessionService {
         // Inactivity timeout check (default 120 menit)
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $lifetime)) {
             self::logout();
+            return;
         }
         $_SESSION['last_activity'] = time();
+
+        // Validasi fingerprint sesi (mencegah session hijacking / cookie theft)
+        if (!empty($_SESSION['logged_in'])) {
+            if (!empty($_SESSION['fingerprint'])) {
+                if (!hash_equals($_SESSION['fingerprint'], self::generateFingerprint())) {
+                    self::logout();
+                    return;
+                }
+            } else {
+                $_SESSION['fingerprint'] = self::generateFingerprint();
+            }
+        }
+    }
+
+    public static function generateFingerprint(): string {
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown_UA';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $ipPrefix = $ip;
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $parts = explode('.', $ip);
+            $ipPrefix = $parts[0] . '.' . $parts[1] . '.' . $parts[2] . '.0';
+        } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $parts = explode(':', $ip);
+            $ipPrefix = implode(':', array_slice($parts, 0, 3));
+        }
+
+        return hash('sha256', $ua . '|' . $ipPrefix);
     }
 
     public static function login(array $user): void {
@@ -45,6 +73,7 @@ class SessionService {
         $_SESSION['role'] = $user['role'] ?? 'user';
         $_SESSION['logged_in'] = true;
         $_SESSION['login_time'] = time();
+        $_SESSION['fingerprint'] = self::generateFingerprint();
     }
 
     public static function logout(): void {

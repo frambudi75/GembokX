@@ -117,6 +117,11 @@ class Database {
                     }
                 }
 
+                // Pastikan kolom totp_secret bertipe TEXT agar mendukung penyimpanan ciphertext terenkripsi
+                try {
+                    $pdo->exec("ALTER TABLE `users` MODIFY COLUMN `totp_secret` TEXT NULL");
+                } catch (\Throwable $e) {}
+
                 // Tetapkan role admin default untuk ID 1 jika belum terset
                 try {
                     $pdo->exec("UPDATE `users` SET `role` = 'admin' WHERE `id` = 1 AND (`role` IS NULL OR `role` = 'user')");
