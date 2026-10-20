@@ -304,14 +304,6 @@
             const d = it.data;
 
             const tags = [];
-            if ((a.breachCount || 0) > 0) {
-                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-rose-600 text-white animate-pulse">Bocor ${a.breachCount.toLocaleString()}x di Dark Web</span>`);
-            }
-            if (a.isWeak) {
-                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300">Sandi Lemah (${d.password.length} char)</span>`);
-            }
-            if (a.isReused) {
-                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300">Digunakan ${a.reusedTimes}x Akun</span>`);
             const explanations = [];
             if ((a.breachCount || 0) > 0) {
                 tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-rose-600 text-white animate-pulse">Bocor ${a.breachCount.toLocaleString()}x di Dark Web</span>`);
