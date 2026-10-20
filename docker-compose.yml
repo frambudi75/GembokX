@@ -9,23 +9,21 @@ services:
       - "2035:80"
     volumes:
       - ./:/var/www/html
-    env_file:
-      - .env
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_URL: ${APP_URL:-http://localhost:2035}
       APP_KEY: ${APP_KEY:-}
-      DB_HOST: ${DB_HOST:-db}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-passvault_db}
-      DB_USER: ${DB_USER:-passvault_user}
-      DB_PASS: ${DB_PASS:-passvault_secret123}
-      REDIS_ENABLED: ${REDIS_ENABLED:-true}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_NAME: "passvault_db"
+      DB_USER: "passvault_user"
+      DB_PASS: ${DOCKER_DB_PASS:-passvault_secret123}
+      REDIS_ENABLED: "true"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      REDIS_PREFIX: ${REDIS_PREFIX:-gembokx:}
+      REDIS_PREFIX: "gembokx:"
     depends_on:
       db:
         condition: service_healthy
@@ -36,13 +34,11 @@ services:
     image: mariadb:10.11
     container_name: gembokx_db
     restart: always
-    env_file:
-      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-root_password_change_me}
-      MYSQL_DATABASE: ${DB_NAME:-passvault_db}
-      MYSQL_USER: ${DB_USER:-passvault_user}
-      MYSQL_PASSWORD: ${DB_PASS:-passvault_secret123}
+      MYSQL_DATABASE: "passvault_db"
+      MYSQL_USER: "passvault_user"
+      MYSQL_PASSWORD: ${DOCKER_DB_PASS:-passvault_secret123}
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
