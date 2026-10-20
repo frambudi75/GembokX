@@ -51,6 +51,52 @@
         </div>
     </div>
 
+    <!-- Kartu Edukasi Sumber Data & Metodologi Audit -->
+    <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-950/20 dark:to-purple-950/20 border border-blue-200/80 dark:border-blue-900/40 rounded-2xl p-5 shadow-xs">
+        <div class="flex items-start space-x-3.5">
+            <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs mt-0.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="flex-1 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-1.5">
+                        <span>Penjelasan Sumber Data & Indikator Keamanan</span>
+                    </h3>
+                    <span class="text-[11px] font-medium text-blue-700 dark:text-blue-300">100% Zero-Knowledge • Sandi Tidak Pernah Dikirim</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300">
+                    <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-blue-100 dark:border-gray-700 shadow-2xs space-y-1">
+                        <div class="font-bold text-purple-700 dark:text-purple-400 flex items-center space-x-1.5">
+                            <span>🌐 Sumber Dark Web</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+                            Berasal dari <strong>HaveIBeenPwned (HIBP)</strong>, database yang memuat 900+ juta sandi dari kasus peretasan besar dunia nyata (Adobe, LinkedIn, Canva, hingga log malware stealer).
+                        </p>
+                    </div>
+
+                    <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-blue-100 dark:border-gray-700 shadow-2xs space-y-1">
+                        <div class="font-bold text-rose-700 dark:text-rose-400 flex items-center space-x-1.5">
+                            <span>🔑 Apa Yang Dinilai "Lemah"?</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+                            Yang dinilai adalah <strong>KATA SANDI</strong> (bukan username). Sandi pendek (&lt; 12 karakter) sangat mudah ditebak penyerang dengan kartu grafis modern (brute-force).
+                        </p>
+                    </div>
+
+                    <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-blue-100 dark:border-gray-700 shadow-2xs space-y-1">
+                        <div class="font-bold text-emerald-700 dark:text-emerald-400 flex items-center space-x-1.5">
+                            <span>🛡️ Privasi k-Anonymity</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+                            Sandi di-hash SHA-1 di browser. Hanya 5 karakter awal hash yang dikirim untuk mencocokkan. Pihak luar tidak pernah tahu apa kata sandi asli Anda.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Breach Check Action Bar & Filter Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-1.5">
@@ -266,28 +312,99 @@
             }
             if (a.isReused) {
                 tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300">Digunakan ${a.reusedTimes}x Akun</span>`);
+            const explanations = [];
+            if ((a.breachCount || 0) > 0) {
+                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-rose-600 text-white animate-pulse">Bocor ${a.breachCount.toLocaleString()}x di Dark Web</span>`);
+                explanations.push(`
+                    <div class="flex items-start space-x-2 text-rose-700 dark:text-rose-400">
+                        <span class="font-bold text-sm leading-none mt-0.5">•</span>
+                        <span><strong>Bocor di Internet & Dark Web (${a.breachCount.toLocaleString()}x):</strong> Kata sandi ini terdaftar dalam database kebocoran HaveIBeenPwned akibat insiden pembobolan data di berbagai layanan online dunia. Peretas menggunakan sandi ini dalam kamus tebakan otomatis (*credential stuffing*).</span>
+                    </div>
+                `);
+            }
+            if (a.isWeak) {
+                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300">Sandi Lemah (${d.password.length} Char)</span>`);
+                explanations.push(`
+                    <div class="flex items-start space-x-2 text-rose-600 dark:text-rose-300">
+                        <span class="font-bold text-sm leading-none mt-0.5">•</span>
+                        <span><strong>Kekuatan Sandi Lemah:</strong> Panjang kata sandi hanya <strong>${d.password.length} karakter</strong> (standar aman minimal 14–16 karakter). Sandi pendek sangat rentan ditembus metode brute-force dalam hitungan menit.</span>
+                    </div>
+                `);
+            }
+            if (a.isReused) {
+                tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300">Digunakan ${a.reusedTimes}x Akun</span>`);
+                explanations.push(`
+                    <div class="flex items-start space-x-2 text-amber-600 dark:text-amber-300">
+                        <span class="font-bold text-sm leading-none mt-0.5">•</span>
+                        <span><strong>Penggunaan Ulang Sandi:</strong> Kata sandi ini dipakai bersamaan di <strong>${a.reusedTimes} akun berbeda</strong>. Jika salah satu layanan tersebut bocor, akun lain ikut terancam.</span>
+                    </div>
+                `);
             }
             if (a.isAged) {
                 tags.push(`<span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-300">Usang (${a.ageDays} hari lalu)</span>`);
+                explanations.push(`
+                    <div class="flex items-start space-x-2 text-orange-600 dark:text-orange-300">
+                        <span class="font-bold text-sm leading-none mt-0.5">•</span>
+                        <span><strong>Sandi Usang:</strong> Terakhir diperbarui <strong>${a.ageDays} hari lalu</strong> (&gt; 180 hari). Disarankan untuk mengganti kata sandi secara berkala.</span>
+                    </div>
+                `);
             }
 
             return `
-            <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                <div class="min-w-0 pr-4">
-                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                        <h4 class="text-sm font-bold text-gray-900 dark:text-white truncate">${VaultApp.escapeHtml ? VaultApp.escapeHtml(d.name) : d.name}</h4>
-                        ${tags.join(' ')}
+            <div class="p-4.5 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            <h4 class="text-sm font-bold text-gray-900 dark:text-white truncate">${VaultApp.escapeHtml ? VaultApp.escapeHtml(d.name) : d.name}</h4>
+                            ${tags.join(' ')}
+                        </div>
+                        <p class="text-xs text-gray-400 font-mono flex items-center space-x-2">
+                            <span>User: <strong class="text-gray-700 dark:text-gray-300 font-semibold">${VaultApp.escapeHtml ? VaultApp.escapeHtml(d.username || 'Tanpa Username') : (d.username || 'Tanpa Username')}</strong></span>
+                            <span>•</span>
+                            <span class="truncate">${d.url ? (VaultApp.escapeHtml ? VaultApp.escapeHtml(d.url) : d.url) : 'Tanpa URL'}</span>
+                        </p>
+
+                        <!-- Tombol Expand Penjelasan Khusus -->
+                        <button type="button" onclick="toggleAuditDetail(${it.id})" class="mt-2.5 inline-flex items-center space-x-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition focus:outline-hidden">
+                            <span>🔍 Penjelasan Rinci & Sumber Temuan</span>
+                            <svg id="audit-icon-${it.id}" class="w-3.5 h-3.5 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
                     </div>
-                    <p class="text-xs text-gray-400 truncate">${d.username || 'Tanpa Username'} • ${d.url || 'Tanpa URL'}</p>
+
+                    <div class="flex items-center space-x-2 flex-shrink-0 mt-0.5">
+                        <button type="button" onclick="openEditItemModal(VaultApp.getDecryptedItems().find(i => i.id == ${it.id}))" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center space-x-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            <span>Perbarui Sandi</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex items-center space-x-2 flex-shrink-0">
-                    <button type="button" onclick="openEditItemModal(VaultApp.getDecryptedItems().find(i => i.id == ${it.id}))" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-xs transition">
-                        Perbarui Sandi
-                    </button>
+                <!-- Kontainer Penjelasan Rinci (Collapsible) -->
+                <div id="audit-detail-${it.id}" class="hidden mt-3 p-4 bg-gray-50/90 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 rounded-xl space-y-2.5 text-xs">
+                    <div class="font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1.5 flex items-center justify-between">
+                        <span>Hasil Diagnosa Keamanan:</span>
+                        <span class="text-[11px] font-normal text-gray-400">Target Username: <strong>${VaultApp.escapeHtml ? VaultApp.escapeHtml(d.username || 'User') : (d.username || 'User')}</strong></span>
+                    </div>
+                    <div class="space-y-1.5 leading-relaxed">
+                        ${explanations.join('')}
+                    </div>
+                    <div class="pt-2 border-t border-gray-200 dark:border-gray-700/80 text-[11px] text-gray-500 dark:text-gray-400">
+                        💡 <strong>Solusi Aman:</strong> Klik tombol <em>Perbarui Sandi</em> untuk membuat kata sandi acak baru minimal 16 karakter via generator.
+                    </div>
                 </div>
             </div>`;
         }).join('');
+    }
+
+    function toggleAuditDetail(id) {
+        const el = document.getElementById(`audit-detail-${id}`);
+        const icon = document.getElementById(`audit-icon-${id}`);
+        if (el) {
+            el.classList.toggle('hidden');
+            if (icon) {
+                icon.classList.toggle('rotate-180');
+            }
+        }
     }
 
     function filterAuditList(type) {
