@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # Instal dependensi dan ekstensi PHP yang dibutuhkan (termasuk GD untuk kompresi avatar)
 RUN apt-get update && apt-get install -y \
