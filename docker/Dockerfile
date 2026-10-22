@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 # Instal dependensi dan ekstensi PHP yang dibutuhkan (termasuk GD untuk kompresi avatar)
 RUN apt-get update && apt-get install -y \
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo pdo_mysql mbstring opcache gd \
+    && docker-php-ext-install pdo_mysql gd opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Aktifkan modul Apache rewrite dan headers
