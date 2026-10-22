@@ -1,18 +1,14 @@
-FROM php:8.4-apache
+FROM php:8.5-apache
 
-# Instal dependensi dan ekstensi PHP yang dibutuhkan (termasuk GD untuk kompresi avatar)
+# Instal utilitas sistem dasar
 RUN apt-get update && apt-get install -y \
-    libonig-dev \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libwebp-dev \
-    libfreetype6-dev \
     zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo_mysql gd opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Instal ekstensi PHP menggunakan installer resmi yang mendukung PHP 8.5
+COPY --from=mlocati/docker-php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+RUN install-php-extensions pdo_mysql gd opcache
 
 # Aktifkan modul Apache rewrite dan headers
 RUN a2enmod rewrite headers
