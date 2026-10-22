@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instal ekstensi PHP menggunakan installer resmi yang mendukung PHP 8.5
-COPY --from=mlocati/docker-php-extension-installer /usr/bin/install-php-extensions /usr/bin/
-RUN install-php-extensions pdo_mysql gd opcache
+# Instal ekstensi PHP resmi menggunakan install-php-extensions (kompatibel penuh dengan PHP 8.5)
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_mysql gd opcache redis zip
 
 # Aktifkan modul Apache rewrite dan headers
 RUN a2enmod rewrite headers
